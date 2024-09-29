@@ -1,4 +1,4 @@
--- ESP, Aimbot, Trigger Bot, and GUI Script
+-- OP Arsenal Script
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -6,19 +6,17 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local espEnabled = false
 local aimbotEnabled = false
-local triggerBotEnabled = false
 
 -- Create GUI
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local ESPButton = Instance.new("TextButton")
 local AimbotButton = Instance.new("TextButton")
-local TriggerBotButton = Instance.new("TextButton")
 
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 MainFrame.Parent = ScreenGui
-MainFrame.Size = UDim2.new(0, 200, 0, 150)
-MainFrame.Position = UDim2.new(0.5, -100, 0.5, -75)
+MainFrame.Size = UDim2.new(0, 200, 0, 100)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -50)
 MainFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 MainFrame.Visible = false -- Start with GUI hidden
 
@@ -43,17 +41,6 @@ AimbotButton.MouseButton1Click:Connect(function()
     AimbotButton.BackgroundColor3 = aimbotEnabled and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
 end)
 
--- Trigger Bot Button
-TriggerBotButton.Parent = MainFrame
-TriggerBotButton.Position = UDim2.new(0, 0, 0, 100)
-TriggerBotButton.Size = UDim2.new(1, 0, 0, 50)
-TriggerBotButton.BackgroundColor3 = Color3.new(1, 0, 0)
-TriggerBotButton.Text = "Toggle Trigger Bot"
-TriggerBotButton.MouseButton1Click:Connect(function()
-    triggerBotEnabled = not triggerBotEnabled
-    TriggerBotButton.BackgroundColor3 = triggerBotEnabled and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
-end)
-
 -- Function to create ESP
 local function createESP(player)
     if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
@@ -62,11 +49,7 @@ local function createESP(player)
         highlight.FillTransparency = 0.5
         highlight.Parent = player.Character
         
-        if player.TeamColor == LocalPlayer.TeamColor then
-            highlight.FillColor = Color3.new(0, 1, 0)  -- Green for team
-        else
-            highlight.FillColor = Color3.new(1, 0, 0)  -- Red for enemies
-        end
+        highlight.FillColor = player.TeamColor == LocalPlayer.TeamColor and Color3.new(0, 1, 0) or Color3.new(1, 0, 0) -- Green for team, Red for enemies
     end
 end
 
@@ -103,28 +86,10 @@ game:GetService("RunService").RenderStepped:Connect(function()
         local targetPlayer = getClosestPlayer()
         if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
             local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
-            
-            -- Adjust aim position higher (if necessary)
             local aimHeightOffset = 2
             targetPosition = targetPosition + Vector3.new(0, aimHeightOffset, 0)
 
             Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
-        end
-    end
-end)
-
--- Trigger Bot functionality
-game:GetService("RunService").RenderStepped:Connect(function()
-    if triggerBotEnabled then
-        local targetPlayer = getClosestPlayer()
-        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character.Humanoid.Health > 0 then
-            local screenPosition, onScreen = Camera:WorldToScreenPoint(targetPlayer.Character.HumanoidRootPart.Position)
-            local mousePosition = UserInputService:GetMouseLocation()
-
-            -- Check if mouse is over the target
-            if onScreen and (Vector2.new(screenPosition.X, screenPosition.Y) - mousePosition).Magnitude < 50 then -- Adjust the range as needed
-                UserInputService.InputBegan:Fire(Enum.UserInputType.MouseButton1, false) -- Simulate left mouse button click
-            end
         end
     end
 end)
