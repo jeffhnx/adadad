@@ -1,4 +1,4 @@
--- Head Tracking Aimbot with ESP (Enemies Red, Teammates Green)
+-- Head Tracking Aimbot with ESP (Enemies Red, Teammates Green, 100% Sensitivity)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -35,12 +35,12 @@ local function getClosestPlayerToCenter()
     return closestPlayer
 end
 
--- Function to aim at a player's head
+-- Function to instantly snap aim to a player's head (100% sensitivity)
 local function aimAtHead(player)
     if player and player.Character and player.Character:FindFirstChild("Head") then
         local headPosition = player.Character.Head.Position
 
-        -- Aim camera at the head position
+        -- Snap camera directly to the head position (100% sensitivity)
         Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPosition)
     end
 end
@@ -102,9 +102,9 @@ local function aimbotLoop()
     while aimbotEnabled do
         local targetPlayer = getClosestPlayerToCenter()
         if targetPlayer then
-            aimAtHead(targetPlayer)
+            aimAtHead(targetPlayer) -- Instantly snap to head
         end
-        wait(0.1) -- Check every 0.1 seconds
+        wait(0.01) -- Very small wait time to ensure 100% sensitivity
     end
 end
 
