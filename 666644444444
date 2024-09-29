@@ -14,7 +14,7 @@ local function createESP(player)
         highlight.Adornee = player.Character
         highlight.FillTransparency = 0.5
         highlight.Parent = player.Character
-
+        
         if player.TeamColor == LocalPlayer.TeamColor then
             highlight.FillColor = Color3.new(0, 1, 0)  -- Green for team
         else
@@ -70,13 +70,13 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
         toggleESP()
     end
 
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right mouse button
         aimbotEnabled = true
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right mouse button
         aimbotEnabled = false
     end
 end)
@@ -87,8 +87,10 @@ game:GetService("RunService").RenderStepped:Connect(function()
         local targetPlayer = getClosestPlayer()
         if targetPlayer and targetPlayer.Character then
             local targetPosition = targetPlayer.Character.PrimaryPart.Position
-            local aimDirection = (targetPosition - Camera.CFrame.Position).unit
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + aimDirection)
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
         end
     end
 end)
+
+-- Initial ESP Setup
+toggleESP()
