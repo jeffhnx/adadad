@@ -1,11 +1,10 @@
--- Head Tracking Aimbot with ESP (1-Second Refresh)
+-- Head Tracking Aimbot with ESP (Enemies Red, Teammates Green)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
-local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
 local aimbotEnabled = false -- Aimbot starts off
 
 local espObjects = {} -- Table to hold ESP objects for easy management
@@ -16,7 +15,7 @@ local function getClosestPlayerToCenter()
     local closestDistance = math.huge -- Set to a high number initially
 
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.TeamColor ~= LocalPlayer.TeamColor and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
             local headPosition = player.Character.Head.Position
             local screenPosition, onScreen = Camera:WorldToScreenPoint(headPosition)
 
@@ -60,26 +59,8 @@ local function createESP(player)
             -- Teammate (Green)
             highlight.Color3 = Color3.fromRGB(0, 255, 0)
         else
-            -- Enemy (Rainbow)
-            local rainbowColors = {
-                Color3.fromRGB(255, 0, 0), -- Red
-                Color3.fromRGB(255, 165, 0), -- Orange
-                Color3.fromRGB(255, 255, 0), -- Yellow
-                Color3.fromRGB(0, 255, 0), -- Green
-                Color3.fromRGB(0, 0, 255), -- Blue
-                Color3.fromRGB(75, 0, 130), -- Indigo
-                Color3.fromRGB(238, 130, 238) -- Violet
-            }
-
-            -- Cycle through rainbow colors
-            spawn(function()
-                while player.Character and highlight do
-                    for _, color in ipairs(rainbowColors) do
-                        highlight.Color3 = color
-                        wait(0.1)
-                    end
-                end
-            end)
+            -- Enemy (Red)
+            highlight.Color3 = Color3.fromRGB(255, 0, 0)
         end
 
         highlight.Parent = player.Character.HumanoidRootPart
