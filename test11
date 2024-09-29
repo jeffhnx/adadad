@@ -1,4 +1,4 @@
--- Head Tracking Aimbot with ESP (Enemies Red, Teammates Green, 100% Sensitivity)
+-- Head Tracking Aimbot with Full Body ESP (Enemies Red, Teammates Green, 100% Sensitivity)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -45,26 +45,26 @@ local function aimAtHead(player)
     end
 end
 
--- Function to create ESP for a player
+-- Function to create ESP for a player's whole body
 local function createESP(player)
     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        local highlight = Instance.new("BoxHandleAdornment")
-        highlight.Adornee = player.Character.HumanoidRootPart
-        highlight.AlwaysOnTop = true
-        highlight.ZIndex = 10
-        highlight.Size = player.Character.HumanoidRootPart.Size
-        highlight.Transparency = 0.3
+        -- Create a box for the whole character
+        local espBox = Instance.new("BoxHandleAdornment")
+        espBox.Adornee = player.Character.HumanoidRootPart
+        espBox.Size = player.Character.HumanoidRootPart.Size + Vector3.new(0, 3, 0) -- Slightly larger for visibility
+        espBox.Transparency = 0.5
+        espBox.AlwaysOnTop = true
 
         if player.TeamColor == LocalPlayer.TeamColor then
             -- Teammate (Green)
-            highlight.Color3 = Color3.fromRGB(0, 255, 0)
+            espBox.Color3 = Color3.fromRGB(0, 255, 0)
         else
             -- Enemy (Red)
-            highlight.Color3 = Color3.fromRGB(255, 0, 0)
+            espBox.Color3 = Color3.fromRGB(255, 0, 0)
         end
 
-        highlight.Parent = player.Character.HumanoidRootPart
-        espObjects[player] = highlight -- Store the ESP object
+        espBox.Parent = player.Character.HumanoidRootPart
+        espObjects[player] = espBox -- Store the ESP object
     end
 end
 
