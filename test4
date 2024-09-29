@@ -74,16 +74,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right mouse button
         aimbotEnabled = true
     end
-
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then -- Left mouse button
-        if triggerBotEnabled then
-            local targetPlayer = getClosestPlayer()
-            if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character.Humanoid.Health > 0 then
-                -- Simulate a click on the left mouse button
-                UserInputService.InputBegan:Fire(Enum.UserInputType.MouseButton1, false)
-            end
-        end
-    end
 end)
 
 UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
@@ -112,6 +102,22 @@ end)
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if input.KeyCode == Enum.KeyCode.T then  -- Press T to toggle Trigger Bot
         triggerBotEnabled = not triggerBotEnabled
+    end
+end)
+
+-- Trigger Bot check and firing
+game:GetService("RunService").RenderStepped:Connect(function()
+    if triggerBotEnabled then
+        local targetPlayer = getClosestPlayer()
+        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character.Humanoid.Health > 0 then
+            local screenPosition, onScreen = Camera:WorldToScreenPoint(targetPlayer.Character.HumanoidRootPart.Position)
+            local mousePosition = UserInputService:GetMouseLocation()
+
+            -- Check if mouse is over the target
+            if onScreen and (Vector2.new(screenPosition.X, screenPosition.Y) - mousePosition).Magnitude < 50 then -- Adjust the range as needed
+                UserInputService.InputBegan:Fire(Enum.UserInputType.MouseButton1, false) -- Simulate left mouse button click
+            end
+        end
     end
 end)
 
