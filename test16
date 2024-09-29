@@ -1,4 +1,4 @@
--- Head Tracking Aimbot with ESP (Tracks Closest to Center of Screen)
+-- Head Tracking Aimbot with ESP (1-Second Refresh)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -7,6 +7,8 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 local aimbotEnabled = false -- Aimbot starts off
+
+local espObjects = {} -- Table to hold ESP objects for easy management
 
 -- Function to find the closest enemy player to the center of the screen
 local function getClosestPlayerToCenter()
@@ -44,7 +46,7 @@ local function aimAtHead(player)
     end
 end
 
--- Function to create ESP for players
+-- Function to create ESP for a player
 local function createESP(player)
     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local highlight = Instance.new("BoxHandleAdornment")
@@ -81,6 +83,36 @@ local function createESP(player)
         end
 
         highlight.Parent = player.Character.HumanoidRootPart
+        espObjects[player] = highlight -- Store the ESP object
+    end
+end
+
+-- Function to remove ESP from a player
+local function removeESP(player)
+    if espObjects[player] then
+        espObjects[player]:Destroy()
+        espObjects[player] = nil
+    end
+end
+
+-- Function to update ESP for all players every 1 second
+local function updateESP()
+    while true do
+        -- Remove old ESP objects
+        for player, esp in pairs(espObjects) do
+            if player.Character == nil or not player.Character:FindFirstChild("HumanoidRootPart") then
+                removeESP(player)
+            end
+        end
+
+        -- Apply ESP to all players
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and not espObjects[player] then
+                createESP(player)
+            end
+        end
+
+        wait(1) -- Refresh ESP every 1 second
     end
 end
 
@@ -109,16 +141,7 @@ UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
     end
 end)
 
--- Apply ESP to all players in the game
-local function applyESPToPlayers()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            createESP(player)
-        end
-    end
-end
-
--- Apply ESP to new players when they join
+-- Apply ESP to all players in the game and start the refresh loop
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function()
         wait(1) -- Wait for character to load
@@ -126,5 +149,5 @@ Players.PlayerAdded:Connect(function(player)
     end)
 end)
 
--- Apply ESP to all players initially
-applyESPToPlayers()
+-- Initial call to update ESP and start the refresh loop
+spawn(updateESP)
