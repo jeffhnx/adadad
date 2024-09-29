@@ -88,8 +88,8 @@ game:GetService("RunService").RenderStepped:Connect(function()
         if targetPlayer and targetPlayer.Character then
             local targetPosition = targetPlayer.Character.PrimaryPart.Position
 
-            -- Adjust aim position higher
-            local aimHeightOffset = 2  -- Adjust this value to aim higher or lower
+            -- Adjust aim position higher (increased offset)
+            local aimHeightOffset = 4  -- Increased to aim higher
             targetPosition = targetPosition + Vector3.new(0, aimHeightOffset, 0)
 
             Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
@@ -97,5 +97,15 @@ game:GetService("RunService").RenderStepped:Connect(function()
     end
 end)
 
--- Initial ESP Setup
-toggleESP()
+-- ESP Refresh Loop
+while true do
+    if espEnabled then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                removeESP(player)  -- Remove previous ESP
+                createESP(player)   -- Create new ESP
+            end
+        end
+    end
+    wait(1)  -- Refresh every 1 second
+end
