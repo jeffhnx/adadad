@@ -1,10 +1,10 @@
--- Auto Left Click with ESP Script
+-- Auto Left Click and Aimbot Script
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
-local espEnabled = true
+local aimbotEnabled = false
 
 -- Function to create ESP
 local function createESP(player)
@@ -48,12 +48,22 @@ local function getClosestPlayer()
     return closestPlayer
 end
 
+-- Function to aim at a player's head
+local function aimAtHead(player)
+    if player and player.Character and player.Character:FindFirstChild("Head") then
+        local headPosition = player.Character.Head.Position
+        local aimHeightOffset = 0.5 -- Adjust as necessary for aiming height
+        headPosition = headPosition + Vector3.new(0, aimHeightOffset, 0) -- Aim slightly above the head
+
+        -- Set camera to aim at the head position
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPosition)
+    end
+end
+
 -- ESP Refresh Loop
 game:GetService("RunService").RenderStepped:Connect(function()
-    if espEnabled then
-        for _, player in pairs(Players:GetPlayers()) do
-            createESP(player)  -- Create ESP for all players
-        end
+    for _, player in pairs(Players:GetPlayers()) do
+        createESP(player)  -- Create ESP for all players
     end
 end)
 
@@ -61,9 +71,17 @@ end)
 while true do
     local targetPlayer = getClosestPlayer()
     if targetPlayer then
-        -- Simulate a left mouse button click
-        UserInputService.InputBegan:Fire(Enum.UserInputType.MouseButton1, false)
-        wait(0.1) -- Adjust the wait time as needed for click speed
+        if aimbotEnabled then
+            aimAtHead(targetPlayer) -- Aim at the player's head
+            UserInputService.InputBegan:Fire(Enum.UserInputType.MouseButton1, false) -- Simulate left click
+        end
     end
     wait(0.1) -- Check every 0.1 seconds
 end
+
+-- Toggle Aimbot with Right Click
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right Mouse Button
+        aimbotEnabled = not aimbotEnabled
+    end
+end)
