@@ -1,62 +1,30 @@
--- OP Arsenal Script
+-- Auto Left Click with ESP Script
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
-local espEnabled = false
-local aimbotEnabled = false
-
--- Create GUI
-local ScreenGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local ESPButton = Instance.new("TextButton")
-local AimbotButton = Instance.new("TextButton")
-
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-MainFrame.Parent = ScreenGui
-MainFrame.Size = UDim2.new(0, 200, 0, 100)
-MainFrame.Position = UDim2.new(0.5, -100, 0.5, -50)
-MainFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-MainFrame.Visible = false -- Start with GUI hidden
-
--- ESP Button
-ESPButton.Parent = MainFrame
-ESPButton.Size = UDim2.new(1, 0, 0, 50)
-ESPButton.BackgroundColor3 = Color3.new(1, 0, 0)
-ESPButton.Text = "Toggle ESP"
-ESPButton.MouseButton1Click:Connect(function()
-    espEnabled = not espEnabled
-    ESPButton.BackgroundColor3 = espEnabled and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
-end)
-
--- Aimbot Button
-AimbotButton.Parent = MainFrame
-AimbotButton.Position = UDim2.new(0, 0, 0, 50)
-AimbotButton.Size = UDim2.new(1, 0, 0, 50)
-AimbotButton.BackgroundColor3 = Color3.new(1, 0, 0)
-AimbotButton.Text = "Toggle Aimbot"
-AimbotButton.MouseButton1Click:Connect(function()
-    aimbotEnabled = not aimbotEnabled
-    AimbotButton.BackgroundColor3 = aimbotEnabled and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
-end)
+local espEnabled = true
 
 -- Function to create ESP
 local function createESP(player)
     if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-        local highlight = Instance.new("Highlight")
-        highlight.Adornee = player.Character
-        highlight.FillTransparency = 0.5
-        highlight.Parent = player.Character
-        
-        highlight.FillColor = player.TeamColor == LocalPlayer.TeamColor and Color3.new(0, 1, 0) or Color3.new(1, 0, 0) -- Green for team, Red for enemies
-    end
-end
-
--- Function to remove ESP
-local function removeESP(player)
-    if player.Character and player.Character:FindFirstChild("Highlight") then
-        player.Character:FindFirstChild("Highlight"):Destroy()
+        if not player.Character:FindFirstChild("Highlight") then
+            local highlight = Instance.new("Highlight")
+            highlight.Adornee = player.Character
+            highlight.FillTransparency = 0.5
+            highlight.Parent = player.Character
+            
+            if player.TeamColor == LocalPlayer.TeamColor then
+                highlight.FillColor = Color3.new(0, 1, 0)  -- Green for teammates
+            else
+                highlight.FillColor = Color3.new(1, 0, 0)  -- Red for enemies
+            end
+        end
+    else
+        if player.Character and player.Character:FindFirstChild("Highlight") then
+            player.Character:FindFirstChild("Highlight"):Destroy()
+        end
     end
 end
 
@@ -80,36 +48,22 @@ local function getClosestPlayer()
     return closestPlayer
 end
 
--- Aimbot loop
-game:GetService("RunService").RenderStepped:Connect(function()
-    if aimbotEnabled then
-        local targetPlayer = getClosestPlayer()
-        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
-            local aimHeightOffset = 2
-            targetPosition = targetPosition + Vector3.new(0, aimHeightOffset, 0)
-
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
-        end
-    end
-end)
-
--- Toggle GUI visibility with Right Shift
-UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if input.KeyCode == Enum.KeyCode.RightShift then
-        MainFrame.Visible = not MainFrame.Visible
-    end
-end)
-
 -- ESP Refresh Loop
-while true do
+game:GetService("RunService").RenderStepped:Connect(function()
     if espEnabled then
         for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
-                removeESP(player)  -- Remove previous ESP
-                createESP(player)   -- Create new ESP
-            end
+            createESP(player)  -- Create ESP for all players
         end
     end
-    wait(1)  -- Refresh every 1 second
+end)
+
+-- Auto click loop
+while true do
+    local targetPlayer = getClosestPlayer()
+    if targetPlayer then
+        -- Simulate a left mouse button click
+        UserInputService.InputBegan:Fire(Enum.UserInputType.MouseButton1, false)
+        wait(0.1) -- Adjust the wait time as needed for click speed
+    end
+    wait(0.1) -- Check every 0.1 seconds
 end
