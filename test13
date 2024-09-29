@@ -1,63 +1,130 @@
--- Auto Fling Enemy GUI Script
+-- Head Tracking Aimbot with ESP (Tracks Closest to Center of Screen)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
-local flingEnabled = false -- Initially set to false
-local screenGui = Instance.new("ScreenGui")
-local toggleButton = Instance.new("TextButton")
+local Camera = Workspace.CurrentCamera
+local aimbotEnabled = false -- Aimbot starts off
 
--- Create the GUI
-screenGui.Name = "FlingGUI"
-screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+-- Function to find the closest enemy player to the center of the screen
+local function getClosestPlayerToCenter()
+    local closestPlayer = nil
+    local closestDistance = math.huge -- Set to a high number initially
 
-toggleButton.Size = UDim2.new(0, 200, 0, 50)
-toggleButton.Position = UDim2.new(0.5, -100, 0.5, -25)
-toggleButton.Text = "Toggle Auto Fling"
-toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-toggleButton.Parent = screenGui
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.TeamColor ~= LocalPlayer.TeamColor and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+            local headPosition = player.Character.Head.Position
+            local screenPosition, onScreen = Camera:WorldToScreenPoint(headPosition)
 
--- Function to fling enemies
-local function flingEnemy(player)
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        local humanoidRootPart = player.Character.HumanoidRootPart
-        local flingForce = Instance.new("BodyVelocity")
-        flingForce.Velocity = (humanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).unit * 100 -- Adjust the multiplier for fling strength
-        flingForce.MaxForce = Vector3.new(10000, 10000, 10000) -- Adjust the max force
-        flingForce.Parent = humanoidRootPart
-        
-        -- Remove the fling force after a short duration
-        game:GetService("Debris"):AddItem(flingForce, 0.1) -- Adjust the time to keep the fling effect
-    end
-end
+            if onScreen then
+                -- Calculate the distance from the screen center
+                local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+                local distanceFromCenter = (Vector2.new(screenPosition.X, screenPosition.Y) - screenCenter).Magnitude
 
--- Loop to find and fling enemies
-local function flingLoop()
-    while flingEnabled do
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.TeamColor ~= LocalPlayer.TeamColor and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-                flingEnemy(player)
+                if distanceFromCenter < closestDistance then
+                    closestDistance = distanceFromCenter
+                    closestPlayer = player
+                end
             end
         end
-        wait(1) -- Adjust how often to check for enemies
+    end
+
+    return closestPlayer
+end
+
+-- Function to aim at a player's head
+local function aimAtHead(player)
+    if player and player.Character and player.Character:FindFirstChild("Head") then
+        local headPosition = player.Character.Head.Position
+
+        -- Aim camera at the head position
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPosition)
     end
 end
 
--- Toggle fling functionality when button is pressed
-toggleButton.MouseButton1Click:Connect(function()
-    flingEnabled = not flingEnabled
-    toggleButton.Text = flingEnabled and "Auto Fling: ON" or "Auto Fling: OFF"
-    if flingEnabled then
-        flingLoop()
-    end
-end)
+-- Function to create ESP for players
+local function createESP(player)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local highlight = Instance.new("BoxHandleAdornment")
+        highlight.Adornee = player.Character.HumanoidRootPart
+        highlight.AlwaysOnTop = true
+        highlight.ZIndex = 10
+        highlight.Size = player.Character.HumanoidRootPart.Size
+        highlight.Transparency = 0.3
 
--- Show/Hide GUI with Right Shift key
+        if player.TeamColor == LocalPlayer.TeamColor then
+            -- Teammate (Green)
+            highlight.Color3 = Color3.fromRGB(0, 255, 0)
+        else
+            -- Enemy (Rainbow)
+            local rainbowColors = {
+                Color3.fromRGB(255, 0, 0), -- Red
+                Color3.fromRGB(255, 165, 0), -- Orange
+                Color3.fromRGB(255, 255, 0), -- Yellow
+                Color3.fromRGB(0, 255, 0), -- Green
+                Color3.fromRGB(0, 0, 255), -- Blue
+                Color3.fromRGB(75, 0, 130), -- Indigo
+                Color3.fromRGB(238, 130, 238) -- Violet
+            }
+
+            -- Cycle through rainbow colors
+            spawn(function()
+                while player.Character and highlight do
+                    for _, color in ipairs(rainbowColors) do
+                        highlight.Color3 = color
+                        wait(0.1)
+                    end
+                end
+            end)
+        end
+
+        highlight.Parent = player.Character.HumanoidRootPart
+    end
+end
+
+-- Aimbot loop (activated by holding right mouse button)
+local function aimbotLoop()
+    while aimbotEnabled do
+        local targetPlayer = getClosestPlayerToCenter()
+        if targetPlayer then
+            aimAtHead(targetPlayer)
+        end
+        wait(0.1) -- Check every 0.1 seconds
+    end
+end
+
+-- Toggle aimbot with right mouse button hold
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if input.KeyCode == Enum.KeyCode.RightShift then
-        screenGui.Enabled = not screenGui.Enabled
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right mouse button
+        aimbotEnabled = true
+        aimbotLoop() -- Start the aimbot loop when right mouse is held
     end
 end)
 
--- Ensure the GUI is initially hidden
-screenGui.Enabled = false
+UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right mouse button
+        aimbotEnabled = false -- Stop aimbot when right mouse is released
+    end
+end)
+
+-- Apply ESP to all players in the game
+local function applyESPToPlayers()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            createESP(player)
+        end
+    end
+end
+
+-- Apply ESP to new players when they join
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        wait(1) -- Wait for character to load
+        createESP(player)
+    end)
+end)
+
+-- Apply ESP to all players initially
+applyESPToPlayers()
