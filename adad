@@ -61,17 +61,8 @@ local function aimAtPlayerHead(targetPlayer)
         local targetHead = targetPlayer.Character.Head
         local adjustedAimPosition = targetHead.Position + Vector3.new(0, 1, 0) -- Adjust height by 1 unit
 
-        -- Raycast to check if there's a direct line of sight (no walls in the way)
-        local origin = camera.CFrame.Position
-        local direction = (adjustedAimPosition - origin).unit * (adjustedAimPosition - origin).magnitude
-        local raycastParams = RaycastParams.new()
-        raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-        raycastParams.FilterDescendantsInstances = {player.Character} -- Ignore local player's character
-
-        local result = game.Workspace:Raycast(origin, direction, raycastParams)
-        if result and result.Instance:IsDescendantOf(targetPlayer.Character) then
-            camera.CFrame = CFrame.new(camera.CFrame.Position, adjustedAimPosition) -- Aim at the adjusted target position
-        end
+        -- Aim at the adjusted target position directly
+        camera.CFrame = CFrame.new(camera.CFrame.Position, adjustedAimPosition) -- Aim at the adjusted target position
     end
 end
 
