@@ -51,7 +51,7 @@ local function getClosestPlayer()
 
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.TeamColor ~= LocalPlayer.TeamColor and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-            local screenPosition, onScreen = Camera:WorldToScreenPoint(player.Character.PrimaryPart.Position)
+            local screenPosition, onScreen = Camera:WorldToScreenPoint(player.Character.HumanoidRootPart.Position)  -- Use HumanoidRootPart for consistent aiming
             if onScreen then
                 local distance = (Vector2.new(screenPosition.X, screenPosition.Y) - UserInputService:GetMouseLocation()).Magnitude
                 if distance < closestDistance then
@@ -85,11 +85,11 @@ end)
 game:GetService("RunService").RenderStepped:Connect(function()
     if aimbotEnabled then
         local targetPlayer = getClosestPlayer()
-        if targetPlayer and targetPlayer.Character then
-            local targetPosition = targetPlayer.Character.PrimaryPart.Position
+        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
 
-            -- Adjust aim position higher (increased offset)
-            local aimHeightOffset = 4  -- Increased to aim higher
+            -- Adjust aim position higher (if necessary)
+            local aimHeightOffset = 2  -- You can keep this or adjust as needed
             targetPosition = targetPosition + Vector3.new(0, aimHeightOffset, 0)
 
             Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
