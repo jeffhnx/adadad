@@ -1,0 +1,63 @@
+-- Auto Fling Enemy GUI Script
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local flingEnabled = false -- Initially set to false
+local screenGui = Instance.new("ScreenGui")
+local toggleButton = Instance.new("TextButton")
+
+-- Create the GUI
+screenGui.Name = "FlingGUI"
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+toggleButton.Size = UDim2.new(0, 200, 0, 50)
+toggleButton.Position = UDim2.new(0.5, -100, 0.5, -25)
+toggleButton.Text = "Toggle Auto Fling"
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+toggleButton.Parent = screenGui
+
+-- Function to fling enemies
+local function flingEnemy(player)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local humanoidRootPart = player.Character.HumanoidRootPart
+        local flingForce = Instance.new("BodyVelocity")
+        flingForce.Velocity = (humanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).unit * 100 -- Adjust the multiplier for fling strength
+        flingForce.MaxForce = Vector3.new(10000, 10000, 10000) -- Adjust the max force
+        flingForce.Parent = humanoidRootPart
+        
+        -- Remove the fling force after a short duration
+        game:GetService("Debris"):AddItem(flingForce, 0.1) -- Adjust the time to keep the fling effect
+    end
+end
+
+-- Loop to find and fling enemies
+local function flingLoop()
+    while flingEnabled do
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.TeamColor ~= LocalPlayer.TeamColor and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+                flingEnemy(player)
+            end
+        end
+        wait(1) -- Adjust how often to check for enemies
+    end
+end
+
+-- Toggle fling functionality when button is pressed
+toggleButton.MouseButton1Click:Connect(function()
+    flingEnabled = not flingEnabled
+    toggleButton.Text = flingEnabled and "Auto Fling: ON" or "Auto Fling: OFF"
+    if flingEnabled then
+        flingLoop()
+    end
+end)
+
+-- Show/Hide GUI with Right Shift key
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        screenGui.Enabled = not screenGui.Enabled
+    end
+end)
+
+-- Ensure the GUI is initially hidden
+screenGui.Enabled = false
