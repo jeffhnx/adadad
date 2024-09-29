@@ -1,4 +1,4 @@
--- ESP, Aimbot, and Trigger Bot Script
+-- ESP, Aimbot, Trigger Bot, and GUI Script
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -7,6 +7,52 @@ local LocalPlayer = Players.LocalPlayer
 local espEnabled = false
 local aimbotEnabled = false
 local triggerBotEnabled = false
+
+-- Create GUI
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local ESPButton = Instance.new("TextButton")
+local AimbotButton = Instance.new("TextButton")
+local TriggerBotButton = Instance.new("TextButton")
+
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+MainFrame.Parent = ScreenGui
+MainFrame.Size = UDim2.new(0, 200, 0, 150)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -75)
+MainFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+MainFrame.Visible = false -- Start with GUI hidden
+
+-- ESP Button
+ESPButton.Parent = MainFrame
+ESPButton.Size = UDim2.new(1, 0, 0, 50)
+ESPButton.BackgroundColor3 = Color3.new(1, 0, 0)
+ESPButton.Text = "Toggle ESP"
+ESPButton.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    ESPButton.BackgroundColor3 = espEnabled and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+end)
+
+-- Aimbot Button
+AimbotButton.Parent = MainFrame
+AimbotButton.Position = UDim2.new(0, 0, 0, 50)
+AimbotButton.Size = UDim2.new(1, 0, 0, 50)
+AimbotButton.BackgroundColor3 = Color3.new(1, 0, 0)
+AimbotButton.Text = "Toggle Aimbot"
+AimbotButton.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    AimbotButton.BackgroundColor3 = aimbotEnabled and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+end)
+
+-- Trigger Bot Button
+TriggerBotButton.Parent = MainFrame
+TriggerBotButton.Position = UDim2.new(0, 0, 0, 100)
+TriggerBotButton.Size = UDim2.new(1, 0, 0, 50)
+TriggerBotButton.BackgroundColor3 = Color3.new(1, 0, 0)
+TriggerBotButton.Text = "Toggle Trigger Bot"
+TriggerBotButton.MouseButton1Click:Connect(function()
+    triggerBotEnabled = not triggerBotEnabled
+    TriggerBotButton.BackgroundColor3 = triggerBotEnabled and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+end)
 
 -- Function to create ESP
 local function createESP(player)
@@ -31,20 +77,6 @@ local function removeESP(player)
     end
 end
 
--- Function to toggle ESP
-local function toggleESP()
-    espEnabled = not espEnabled
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            if espEnabled then
-                createESP(player)
-            else
-                removeESP(player)
-            end
-        end
-    end
-end
-
 -- Function to find the closest enemy player
 local function getClosestPlayer()
     local closestPlayer = nil
@@ -65,23 +97,6 @@ local function getClosestPlayer()
     return closestPlayer
 end
 
--- Aimbot functionality
-UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if input.KeyCode == Enum.KeyCode.L then
-        toggleESP()
-    end
-
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right mouse button
-        aimbotEnabled = true
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right mouse button
-        aimbotEnabled = false
-    end
-end)
-
 -- Aimbot loop
 game:GetService("RunService").RenderStepped:Connect(function()
     if aimbotEnabled then
@@ -99,13 +114,6 @@ game:GetService("RunService").RenderStepped:Connect(function()
 end)
 
 -- Trigger Bot functionality
-UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if input.KeyCode == Enum.KeyCode.T then  -- Press T to toggle Trigger Bot
-        triggerBotEnabled = not triggerBotEnabled
-    end
-end)
-
--- Trigger Bot check and firing
 game:GetService("RunService").RenderStepped:Connect(function()
     if triggerBotEnabled then
         local targetPlayer = getClosestPlayer()
@@ -118,6 +126,13 @@ game:GetService("RunService").RenderStepped:Connect(function()
                 UserInputService.InputBegan:Fire(Enum.UserInputType.MouseButton1, false) -- Simulate left mouse button click
             end
         end
+    end
+end)
+
+-- Toggle GUI visibility with Right Shift
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        MainFrame.Visible = not MainFrame.Visible
     end
 end)
 
