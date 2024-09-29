@@ -1,0 +1,94 @@
+-- ESP and Aimbot Script
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+local espEnabled = false
+local aimbotEnabled = false
+
+-- Function to create ESP
+local function createESP(player)
+    if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+        local highlight = Instance.new("Highlight")
+        highlight.Adornee = player.Character
+        highlight.FillTransparency = 0.5
+        highlight.Parent = player.Character
+
+        if player.TeamColor == LocalPlayer.TeamColor then
+            highlight.FillColor = Color3.new(0, 1, 0)  -- Green for team
+        else
+            highlight.FillColor = Color3.new(1, 0, 0)  -- Red for enemies
+        end
+    end
+end
+
+-- Function to remove ESP
+local function removeESP(player)
+    if player.Character and player.Character:FindFirstChild("Highlight") then
+        player.Character:FindFirstChild("Highlight"):Destroy()
+    end
+end
+
+-- Function to toggle ESP
+local function toggleESP()
+    espEnabled = not espEnabled
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            if espEnabled then
+                createESP(player)
+            else
+                removeESP(player)
+            end
+        end
+    end
+end
+
+-- Function to find the closest enemy player
+local function getClosestPlayer()
+    local closestPlayer = nil
+    local closestDistance = math.huge
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.TeamColor ~= LocalPlayer.TeamColor and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+            local screenPosition, onScreen = Camera:WorldToScreenPoint(player.Character.PrimaryPart.Position)
+            if onScreen then
+                local distance = (Vector2.new(screenPosition.X, screenPosition.Y) - UserInputService:GetMouseLocation()).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestPlayer = player
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
+-- Aimbot functionality
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if input.KeyCode == Enum.KeyCode.L then
+        toggleESP()
+    end
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        aimbotEnabled = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        aimbotEnabled = false
+    end
+end)
+
+-- Aimbot loop
+game:GetService("RunService").RenderStepped:Connect(function()
+    if aimbotEnabled then
+        local targetPlayer = getClosestPlayer()
+        if targetPlayer and targetPlayer.Character then
+            local targetPosition = targetPlayer.Character.PrimaryPart.Position
+            local aimDirection = (targetPosition - Camera.CFrame.Position).unit
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + aimDirection)
+        end
+    end
+end)
