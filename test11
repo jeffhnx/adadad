@@ -1,4 +1,4 @@
--- Auto Left Click and Aimbot Script
+-- Auto Left Click and Aimbot Script (Hold Right Click)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -82,6 +82,12 @@ end
 -- Toggle Aimbot with Right Click
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right Mouse Button
-        aimbotEnabled = not aimbotEnabled
+        aimbotEnabled = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right Mouse Button
+        aimbotEnabled = false
     end
 end)
