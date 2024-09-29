@@ -1,4 +1,4 @@
--- ESP and Aimbot Script
+-- ESP, Aimbot, and Trigger Bot Script
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -6,6 +6,7 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local espEnabled = false
 local aimbotEnabled = false
+local triggerBotEnabled = false
 
 -- Function to create ESP
 local function createESP(player)
@@ -51,7 +52,7 @@ local function getClosestPlayer()
 
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.TeamColor ~= LocalPlayer.TeamColor and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-            local screenPosition, onScreen = Camera:WorldToScreenPoint(player.Character.HumanoidRootPart.Position)  -- Use HumanoidRootPart for consistent aiming
+            local screenPosition, onScreen = Camera:WorldToScreenPoint(player.Character.HumanoidRootPart.Position)
             if onScreen then
                 local distance = (Vector2.new(screenPosition.X, screenPosition.Y) - UserInputService:GetMouseLocation()).Magnitude
                 if distance < closestDistance then
@@ -73,6 +74,16 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right mouse button
         aimbotEnabled = true
     end
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then -- Left mouse button
+        if triggerBotEnabled then
+            local targetPlayer = getClosestPlayer()
+            if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character.Humanoid.Health > 0 then
+                -- Simulate a click on the left mouse button
+                UserInputService.InputBegan:Fire(Enum.UserInputType.MouseButton1, false)
+            end
+        end
+    end
 end)
 
 UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
@@ -87,13 +98,20 @@ game:GetService("RunService").RenderStepped:Connect(function()
         local targetPlayer = getClosestPlayer()
         if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
             local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
-
+            
             -- Adjust aim position higher (if necessary)
-            local aimHeightOffset = 2  -- You can keep this or adjust as needed
+            local aimHeightOffset = 2
             targetPosition = targetPosition + Vector3.new(0, aimHeightOffset, 0)
 
             Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
         end
+    end
+end)
+
+-- Trigger Bot functionality
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if input.KeyCode == Enum.KeyCode.T then  -- Press T to toggle Trigger Bot
+        triggerBotEnabled = not triggerBotEnabled
     end
 end)
 
