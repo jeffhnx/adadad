@@ -21,7 +21,9 @@ local LocalPlayer = Players.LocalPlayer
 
 --// Variables
 local RequiredDistance, Typing, Running, Animation, ServiceConnections = 2000, false, false, nil, {}
-local Power = 50 -- Default power value (1-100)
+local AimbotStrength = 0.5 -- Default strength (range 0-1)
+local GuiVisible = true -- Variable to track GUI visibility
+local RightMouseHeld = false -- Track if right mouse button is held
 
 --// Script Settings
 Environment.Settings = {
@@ -29,7 +31,7 @@ Environment.Settings = {
     TeamCheck = false,
     AliveCheck = true,
     WallCheck = false, -- Laggy
-    Sensitivity = 0, -- Animation length (in seconds) before fully locking onto target
+    Sensitivity = AimbotStrength, -- Animation length (in seconds) before fully locking onto target
     ThirdPerson = false, -- Uses mousemoverel instead of CFrame to support locking in third person (could be choppy)
     ThirdPersonSensitivity = 3, -- Boundary: 0.1 - 5
     TriggerKey = "MouseButton2",
@@ -55,99 +57,71 @@ Environment.FOVCircle = Drawing.new("Circle")
 local ScreenGui = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 local ToggleAimbot = Instance.new("TextButton")
-local ToggleTeamCheck = Instance.new("TextButton")
 local SensitivityLabel = Instance.new("TextLabel")
-local SensitivitySlider = Instance.new("TextButton")
-local PowerLabel = Instance.new("TextLabel")
-local PowerSliderFrame = Instance.new("Frame")
-local PowerSlider = Instance.new("Frame")
-local PowerValueLabel = Instance.new("TextLabel")
+local SensitivitySliderFrame = Instance.new("Frame")
+local SensitivitySlider = Instance.new("Frame")
+local SensitivityValueLabel = Instance.new("TextLabel")
 
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 Frame.Position = UDim2.new(0, 100, 0, 100)
-Frame.Size = UDim2.new(0, 200, 0, 400)
+Frame.Size = UDim2.new(0, 200, 0, 300)
+Frame.Visible = GuiVisible -- Initialize as visible
 
 ToggleAimbot.Parent = Frame
-ToggleAimbot.Text = "Toggle Aimbot"
+ToggleAimbot.Text = "Aimbot: ON"
 ToggleAimbot.Size = UDim2.new(0, 200, 0, 50)
 ToggleAimbot.Position = UDim2.new(0, 0, 0, 0)
 ToggleAimbot.MouseButton1Click:Connect(function()
     Environment.Settings.Enabled = not Environment.Settings.Enabled
-    ToggleAimbot.Text = "Aimbot: " .. tostring(Environment.Settings.Enabled)
+    ToggleAimbot.Text = "Aimbot: " .. (Environment.Settings.Enabled and "ON" or "OFF")
 end)
 
-ToggleTeamCheck.Parent = Frame
-ToggleTeamCheck.Text = "Toggle TeamCheck"
-ToggleTeamCheck.Size = UDim2.new(0, 200, 0, 50)
-ToggleTeamCheck.Position = UDim2.new(0, 0, 0, 60)
-ToggleTeamCheck.MouseButton1Click:Connect(function()
-    Environment.Settings.TeamCheck = not Environment.Settings.TeamCheck
-    ToggleTeamCheck.Text = "TeamCheck: " .. tostring(Environment.Settings.TeamCheck)
-end)
-
+-- Sensitivity Label
 SensitivityLabel.Parent = Frame
-SensitivityLabel.Text = "Sensitivity"
+SensitivityLabel.Text = "Aimbot Strength"
 SensitivityLabel.Size = UDim2.new(0, 200, 0, 50)
-SensitivityLabel.Position = UDim2.new(0, 0, 0, 120)
+SensitivityLabel.Position = UDim2.new(0, 0, 0, 60)
 
-SensitivitySlider.Parent = Frame
-SensitivitySlider.Text = tostring(Environment.Settings.Sensitivity)
-SensitivitySlider.Size = UDim2.new(0, 200, 0, 50)
-SensitivitySlider.Position = UDim2.new(0, 0, 0, 180)
-SensitivitySlider.MouseButton1Click:Connect(function()
-    Environment.Settings.Sensitivity = Environment.Settings.Sensitivity + 0.1
-    if Environment.Settings.Sensitivity > 1 then
-        Environment.Settings.Sensitivity = 0
-    end
-    SensitivitySlider.Text = tostring(Environment.Settings.Sensitivity)
-end)
+-- Sensitivity Slider Frame
+SensitivitySliderFrame.Parent = Frame
+SensitivitySliderFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+SensitivitySliderFrame.Size = UDim2.new(0, 180, 0, 10)
+SensitivitySliderFrame.Position = UDim2.new(0, 10, 0, 120)
 
--- Power Label
-PowerLabel.Parent = Frame
-PowerLabel.Text = "Power (1-100)"
-PowerLabel.Size = UDim2.new(0, 200, 0, 50)
-PowerLabel.Position = UDim2.new(0, 0, 0, 240)
+-- Sensitivity Slider (Draggable part)
+SensitivitySlider.Parent = SensitivitySliderFrame
+SensitivitySlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SensitivitySlider.Size = UDim2.new(AimbotStrength, 0, 1, 0)
+SensitivitySlider.Position = UDim2.new(0, 0, 0, 0)
 
--- Power Slider Frame
-PowerSliderFrame.Parent = Frame
-PowerSliderFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-PowerSliderFrame.Size = UDim2.new(0, 180, 0, 10)
-PowerSliderFrame.Position = UDim2.new(0, 10, 0, 300)
+-- Sensitivity Value Label
+SensitivityValueLabel.Parent = Frame
+SensitivityValueLabel.Text = tostring(AimbotStrength * 100)
+SensitivityValueLabel.Size = UDim2.new(0, 200, 0, 50)
+SensitivityValueLabel.Position = UDim2.new(0, 0, 0, 150)
 
--- Power Slider (Draggable part)
-PowerSlider.Parent = PowerSliderFrame
-PowerSlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-PowerSlider.Size = UDim2.new(Power / 100, 0, 1, 0)
-PowerSlider.Position = UDim2.new(0, 0, 0, 0)
-
--- Power Value Label
-PowerValueLabel.Parent = Frame
-PowerValueLabel.Text = tostring(Power)
-PowerValueLabel.Size = UDim2.new(0, 200, 0, 50)
-PowerValueLabel.Position = UDim2.new(0, 0, 0, 320)
-
--- Function to update the Power based on slider position
-local function UpdatePower(input)
-    local newSize = math.clamp((input.Position.X - PowerSliderFrame.AbsolutePosition.X) / PowerSliderFrame.AbsoluteSize.X, 0, 1)
-    Power = math.floor(newSize * 100)
-    PowerSlider.Size = UDim2.new(newSize, 0, 1, 0)
-    PowerValueLabel.Text = tostring(Power)
+-- Function to update the Aimbot Strength based on slider position
+local function UpdateAimbotStrength(input)
+    local newSize = math.clamp((input.Position.X - SensitivitySliderFrame.AbsolutePosition.X) / SensitivitySliderFrame.AbsoluteSize.X, 0, 1)
+    AimbotStrength = newSize
+    SensitivitySlider.Size = UDim2.new(newSize, 0, 1, 0)
+    SensitivityValueLabel.Text = tostring(math.floor(AimbotStrength * 100))
     
-    -- Adjust Sensitivity or other attributes based on Power
-    Environment.Settings.Sensitivity = Power / 100
+    -- Update the aimbot's sensitivity based on the slider
+    Environment.Settings.Sensitivity = AimbotStrength
 end
 
 -- Make the slider draggable
-PowerSlider.InputBegan:Connect(function(input)
+SensitivitySlider.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         local dragging = true
         local inputChanged
 
         inputChanged = UserInputService.InputChanged:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
-                UpdatePower(input)
+                UpdateAimbotStrength(input)
             end
         end)
 
@@ -160,13 +134,59 @@ PowerSlider.InputBegan:Connect(function(input)
     end
 end)
 
---// Main Script Logic (Rest of your code)
+--// Toggle GUI Visibility with Right Shift
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        GuiVisible = not GuiVisible -- Toggle visibility
+        Frame.Visible = GuiVisible
+    end
+end)
 
-local function CancelLock()
-    Environment.Locked = nil
-    if Animation then Animation:Cancel() end
-    Environment.FOVCircle.Color = Environment.FOVSettings.Color
+--// Detect if Right Mouse Button is Held
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right Mouse Button
+        RightMouseHeld = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right Mouse Button
+        RightMouseHeld = false
+    end
+end)
+
+--// Main Aimbot Logic
+local function GetClosestPlayer()
+    if not Environment.Locked and RightMouseHeld then
+        RequiredDistance = (Environment.FOVSettings.Enabled and Environment.FOVSettings.Amount or 2000)
+
+        for _, v in next, Players:GetPlayers() do
+            if v ~= LocalPlayer then
+                if v.Character and v.Character:FindFirstChild(Environment.Settings.LockPart) and v.Character:FindFirstChildOfClass("Humanoid") then
+                    if Environment.Settings.TeamCheck and v.Team == LocalPlayer.Team then continue end
+                    if Environment.Settings.AliveCheck and v.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then continue end
+                    if Environment.Settings.WallCheck and #(Camera:GetPartsObscuringTarget({v.Character[Environment.Settings.LockPart].Position}, v.Character:GetDescendants())) > 0 then continue end
+
+                    local Vector, OnScreen = Camera:WorldToViewportPoint(v.Character[Environment.Settings.LockPart].Position)
+                    local Distance = (Vector2(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) - Vector2(Vector.X, Vector.Y)).Magnitude
+
+                    if Distance < RequiredDistance and OnScreen then
+                        RequiredDistance = Distance
+                        Environment.Locked = v
+                    end
+                end
+            end
+        end
+    elseif (Vector2(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) - Vector2(Camera:WorldToViewportPoint(Environment.Locked.Character[Environment.Settings.LockPart].Position).X, Camera:WorldToViewportPoint(Environment.Locked.Character[Environment.Settings.LockPart].Position).Y)).Magnitude > RequiredDistance then
+        Environment.Locked = nil
+    end
 end
 
--- Load the script
-Load()
+--// Main Render Loop
+RunService.RenderStepped:Connect(function()
+    if Environment.Settings.Enabled and RightMouseHeld then
+        GetClosestPlayer()
+        if Environment.Locked then
+            if Environment.Settings.ThirdPerson then
+                local Vector = Camera:WorldToViewportPoint(Environment.Locked.Character[Environment.Settings.LockPart].Position)
+                mousemoverel((Vector.X - UserInputService:GetMouseLocation().X) * Environment.Settings.
