@@ -14,7 +14,6 @@ local Environment = getgenv().Aimbot
 --// Services
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
@@ -24,6 +23,7 @@ local RequiredDistance, Typing, Running, Animation, ServiceConnections = 2000, f
 local AimbotStrength = 0.5 -- Default strength (range 0-1)
 local GuiVisible = true -- Variable to track GUI visibility
 local RightMouseHeld = false -- Track if right mouse button is held
+local AimbotEnabled = true -- Aimbot toggle from the GUI
 
 --// Script Settings
 Environment.Settings = {
@@ -69,13 +69,14 @@ Frame.Position = UDim2.new(0, 100, 0, 100)
 Frame.Size = UDim2.new(0, 200, 0, 300)
 Frame.Visible = GuiVisible -- Initialize as visible
 
+-- Toggle Aimbot Button
 ToggleAimbot.Parent = Frame
 ToggleAimbot.Text = "Aimbot: ON"
 ToggleAimbot.Size = UDim2.new(0, 200, 0, 50)
 ToggleAimbot.Position = UDim2.new(0, 0, 0, 0)
 ToggleAimbot.MouseButton1Click:Connect(function()
-    Environment.Settings.Enabled = not Environment.Settings.Enabled
-    ToggleAimbot.Text = "Aimbot: " .. (Environment.Settings.Enabled and "ON" or "OFF")
+    AimbotEnabled = not AimbotEnabled
+    ToggleAimbot.Text = "Aimbot: " .. (AimbotEnabled and "ON" or "OFF")
 end)
 
 -- Sensitivity Label
@@ -157,7 +158,7 @@ end)
 
 --// Main Aimbot Logic
 local function GetClosestPlayer()
-    if not Environment.Locked and RightMouseHeld then
+    if not Environment.Locked and RightMouseHeld and AimbotEnabled then
         RequiredDistance = (Environment.FOVSettings.Enabled and Environment.FOVSettings.Amount or 2000)
 
         for _, v in next, Players:GetPlayers() do
@@ -184,9 +185,17 @@ end
 
 --// Main Render Loop
 RunService.RenderStepped:Connect(function()
-    if Environment.Settings.Enabled and RightMouseHeld then
+    if Environment.Settings.Enabled and RightMouseHeld and AimbotEnabled then
         GetClosestPlayer()
         if Environment.Locked then
             if Environment.Settings.ThirdPerson then
                 local Vector = Camera:WorldToViewportPoint(Environment.Locked.Character[Environment.Settings.LockPart].Position)
-                mousemoverel((Vector.X - UserInputService:GetMouseLocation().X) * Environment.Settings.
+                mousemoverel((Vector.X - UserInputService:GetMouseLocation().X) * Environment.Settings.ThirdPersonSensitivity, (Vector.Y - UserInputService:GetMouseLocation().Y) * Environment.Settings.ThirdPersonSensitivity)
+            else
+                local LockPosition = Environment.Locked.Character[Environment.Settings.LockPart].Position
+                local Tween = TweenService:Create(Camera, TweenInfo.new(Environment.Settings.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = CFrame.new(Camera.CFrame.Position, LockPosition)})
+                Tween:Play()
+            end
+        end
+    end
+end)
