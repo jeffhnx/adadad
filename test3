@@ -138,3 +138,18 @@ end)
 if espEnabled then
     spawn(updateESP)
 end
+
+-- Refresh ESP for players when they join
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(character)
+        wait(1) -- Wait for the character to fully load
+        createESP(player)
+    end)
+end)
+
+-- Create ESP for existing players when the script runs
+for _, player in pairs(Players:GetPlayers()) do
+    if player.Character then
+        createESP(player)
+    end
+end
