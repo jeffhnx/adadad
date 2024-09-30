@@ -1,14 +1,12 @@
--- LocalScript for tracking player heads with glowing ESP that sees through walls
+-- LocalScript for Valblox with Aimbot and ESP
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
-local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local aimbotEnabled = false -- Aimbot starts off
 local espEnabled = false -- ESP starts off
-
 local espObjects = {} -- Table to hold ESP objects for easy management
 
 -- Function to find the closest player head to the center of the screen
@@ -49,7 +47,7 @@ local function aimAtPlayer(player)
     end
 end
 
--- Function to create glowing ESP for a player that sees through walls
+-- Function to create glowing ESP for a player
 local function createESP(player)
     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local highlight = Instance.new("Highlight")
@@ -126,13 +124,20 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
         espEnabled = not espEnabled -- Toggle ESP on/off
         if espEnabled then
             updateESP() -- Start updating ESP if enabled
+        else
+            -- Remove ESP for all players if disabled
+            for player in pairs(espObjects) do
+                removeESP(player)
+            end
         end
     end
 end)
 
--- Initial call to update ESP and start the refresh loop if ESP is enabled
-if espEnabled then
-    spawn(updateESP)
+-- Create ESP for existing players when the script runs
+for _, player in pairs(Players:GetPlayers()) do
+    if player.Character then
+        createESP(player)
+    end
 end
 
 -- Refresh ESP for players when they join
@@ -142,10 +147,3 @@ Players.PlayerAdded:Connect(function(player)
         createESP(player)
     end)
 end)
-
--- Create ESP for existing players when the script runs
-for _, player in pairs(Players:GetPlayers()) do
-    if player.Character then
-        createESP(player)
-    end
-end
