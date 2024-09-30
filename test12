@@ -21,6 +21,7 @@ local LocalPlayer = Players.LocalPlayer
 
 --// Variables
 local RequiredDistance, Typing, Running, Animation, ServiceConnections = 2000, false, false, nil, {}
+local Power = 50 -- Default power value (1-100)
 
 --// Script Settings
 Environment.Settings = {
@@ -57,12 +58,14 @@ local ToggleAimbot = Instance.new("TextButton")
 local ToggleTeamCheck = Instance.new("TextButton")
 local SensitivityLabel = Instance.new("TextLabel")
 local SensitivitySlider = Instance.new("TextButton")
+local PowerLabel = Instance.new("TextLabel")
+local PowerSlider = Instance.new("TextButton")
 
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 Frame.Position = UDim2.new(0, 100, 0, 100)
-Frame.Size = UDim2.new(0, 200, 0, 300)
+Frame.Size = UDim2.new(0, 200, 0, 350)
 
 ToggleAimbot.Parent = Frame
 ToggleAimbot.Text = "Toggle Aimbot"
@@ -98,6 +101,29 @@ SensitivitySlider.MouseButton1Click:Connect(function()
     end
     SensitivitySlider.Text = tostring(Environment.Settings.Sensitivity)
 end)
+
+-- Power Label and Slider
+PowerLabel.Parent = Frame
+PowerLabel.Text = "Power (1-100)"
+PowerLabel.Size = UDim2.new(0, 200, 0, 50)
+PowerLabel.Position = UDim2.new(0, 0, 0, 240)
+
+PowerSlider.Parent = Frame
+PowerSlider.Text = tostring(Power)
+PowerSlider.Size = UDim2.new(0, 200, 0, 50)
+PowerSlider.Position = UDim2.new(0, 0, 0, 300)
+PowerSlider.MouseButton1Click:Connect(function()
+    Power = Power + 10
+    if Power > 100 then
+        Power = 1
+    end
+    PowerSlider.Text = tostring(Power)
+end)
+
+-- You can use the Power variable in your script logic to affect the "power" of the aimbot
+
+-- Example: Adjust sensitivity based on power
+Environment.Settings.Sensitivity = Power / 100 -- Scale sensitivity based on power (1-100)
 
 --// Main Script Logic (Rest of your code)
 local function CancelLock()
