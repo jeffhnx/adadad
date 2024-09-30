@@ -1,23 +1,24 @@
--- LocalScript for Valblox with Aimbot and ESP
+-- LocalScript for Valblox with Aimbot, ESP, Team Checker, and Squares
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local aimbotEnabled = false -- Aimbot starts off
 local espEnabled = false -- ESP starts off
 local espObjects = {} -- Table to hold ESP objects for easy management
 
--- Function to find the closest player head to the center of the screen
-local function getClosestPlayerToCenter()
+-- Function to find the closest enemy player head to the center of the screen
+local function getClosestEnemyToCenter()
     local closestPlayer = nil
     local closestDistance = math.huge
 
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
             local head = player.Character:FindFirstChild("Head")
-            if head then
+            if head and player.Team ~= LocalPlayer.Team then -- Check if the player is on the enemy team
                 local headPosition, onScreen = Camera:WorldToScreenPoint(head.Position)
 
                 if onScreen then
@@ -56,18 +57,52 @@ local function createESP(player)
         highlight.OutlineTransparency = 0 -- No outline transparency
         highlight.Enabled = true
 
-        -- Set glow color to green for all players
-        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- All players (Green)
+        -- Set glow color based on team
+        if player.Team == LocalPlayer.Team then
+            highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Teammates (Green)
+        else
+            highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Enemies (Red)
+        end
 
         highlight.Parent = player.Character.HumanoidRootPart
         espObjects[player] = highlight -- Store the ESP object
+
+        -- Create a square around the player
+        local square = Instance.new("Frame")
+        square.Size = UDim2.new(0, 50, 0, 50) -- Size of the square
+        square.BackgroundTransparency = 0.5
+        square.BorderSizePixel = 0
+        square.Parent = game.CoreGui -- Add square to CoreGui for visibility
+        espObjects[player].Square = square -- Store the square in the espObjects table
+
+        -- Update square position every frame
+        RunService.RenderStepped:Connect(function()
+            if espEnabled and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local position, onScreen = Camera:WorldToScreenPoint(player.Character.HumanoidRootPart.Position)
+                if onScreen then
+                    square.Position = UDim2.new(0, position.X - 25, 0, position.Y - 25) -- Center the square on the player
+                    if player.Team == LocalPlayer.Team then
+                        square.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Teammates (Green)
+                    else
+                        square.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Enemies (Red)
+                    end
+                    square.Visible = true
+                else
+                    square.Visible = false
+                end
+            else
+                square.Visible = false
+            end
+        end)
     end
 end
 
 -- Function to remove ESP from a player
 local function removeESP(player)
     if espObjects[player] then
-        espObjects[player]:Destroy()
+        espObjects[player]:Destroy() -- Remove highlight
+        espObjects[player].Square.Visible = false -- Hide the square
+        espObjects[player].Square:Destroy() -- Remove square
         espObjects[player] = nil
     end
 end
@@ -96,9 +131,9 @@ end
 -- Aimbot loop (activated by holding right mouse button)
 local function aimbotLoop()
     while aimbotEnabled do
-        local targetPlayer = getClosestPlayerToCenter() -- Get the closest player to the center
+        local targetPlayer = getClosestEnemyToCenter() -- Get the closest enemy player to the center
         if targetPlayer then
-            aimAtPlayer(targetPlayer) -- Aim at the player
+            aimAtPlayer(targetPlayer) -- Aim at the enemy player
         end
         wait(0.01) -- Small wait time for smooth aiming
     end
