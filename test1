@@ -1,0 +1,140 @@
+-- LocalScript for tracking player torsos with glowing ESP that sees through walls
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local aimbotEnabled = false -- Aimbot starts off
+local espEnabled = false -- ESP starts off
+
+local espObjects = {} -- Table to hold ESP objects for easy management
+
+-- Function to find the closest player torso to the center of the screen
+local function getClosestPlayerToCenter()
+    local closestPlayer = nil
+    local closestDistance = math.huge
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+            local torso = player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("UpperTorso")
+            if torso then
+                local torsoPosition, onScreen = Camera:WorldToScreenPoint(torso.Position)
+
+                if onScreen then
+                    local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+                    local distanceFromCenter = (Vector2.new(torsoPosition.X, torsoPosition.Y) - screenCenter).Magnitude
+
+                    if distanceFromCenter < closestDistance then
+                        closestDistance = distanceFromCenter
+                        closestPlayer = player
+                    end
+                end
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
+-- Function to aim at a player's torso with an upward offset
+local function aimAtPlayer(player)
+    if player and player.Character then
+        local torso = player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("UpperTorso")
+        if torso then
+            local aimPosition = torso.Position + Vector3.new(0, 1, 0) -- Adjust the Y offset here (1 stud higher)
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, aimPosition) -- Aim directly at the adjusted position
+        end
+    end
+end
+
+-- Function to create glowing ESP for a player that sees through walls
+local function createESP(player)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local highlight = Instance.new("Highlight")
+        highlight.Adornee = player.Character.HumanoidRootPart
+        highlight.FillTransparency = 0.5 -- Set the fill transparency (0 is opaque, 1 is transparent)
+        highlight.OutlineTransparency = 0 -- No outline transparency
+        highlight.Enabled = true
+
+        -- Set glow color based on team
+        if player.TeamColor == LocalPlayer.TeamColor then
+            highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Teammate (Green)
+        else
+            highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Enemy (Red)
+        end
+
+        highlight.Parent = player.Character.HumanoidRootPart
+        espObjects[player] = highlight -- Store the ESP object
+    end
+end
+
+-- Function to remove ESP from a player
+local function removeESP(player)
+    if espObjects[player] then
+        espObjects[player]:Destroy()
+        espObjects[player] = nil
+    end
+end
+
+-- Function to update ESP for all players every 1 second
+local function updateESP()
+    while espEnabled do
+        -- Remove old ESP objects
+        for player, esp in pairs(espObjects) do
+            if player.Character == nil or not player.Character:FindFirstChild("HumanoidRootPart") then
+                removeESP(player)
+            end
+        end
+
+        -- Apply ESP to all players
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and not espObjects[player] then
+                createESP(player)
+            end
+        end
+
+        wait(1) -- Refresh ESP every 1 second
+    end
+end
+
+-- Aimbot loop (activated by holding right mouse button)
+local function aimbotLoop()
+    while aimbotEnabled do
+        local targetPlayer = getClosestPlayerToCenter() -- Get the closest player to the center
+        if targetPlayer then
+            aimAtPlayer(targetPlayer) -- Aim at the player
+        end
+        wait(0.01) -- Small wait time for smooth aiming
+    end
+end
+
+-- Toggle aimbot with right mouse button hold
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right mouse button
+        aimbotEnabled = true
+        aimbotLoop() -- Start the aimbot loop when right mouse is held
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right mouse button
+        aimbotEnabled = false -- Stop aimbot when right mouse is released
+    end
+end)
+
+-- Toggle ESP with F key
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if input.KeyCode == Enum.KeyCode.F then
+        espEnabled = not espEnabled -- Toggle ESP on/off
+        if espEnabled then
+            updateESP() -- Start updating ESP if enabled
+        end
+    end
+end)
+
+-- Initial call to update ESP and start the refresh loop if ESP is enabled
+if espEnabled then
+    spawn(updateESP)
+end
