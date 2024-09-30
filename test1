@@ -1,4 +1,4 @@
--- LocalScript for tracking player torsos with glowing ESP that sees through walls
+-- LocalScript for tracking player heads with glowing ESP that sees through walls
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -11,20 +11,20 @@ local espEnabled = false -- ESP starts off
 
 local espObjects = {} -- Table to hold ESP objects for easy management
 
--- Function to find the closest player torso to the center of the screen
+-- Function to find the closest player head to the center of the screen
 local function getClosestPlayerToCenter()
     local closestPlayer = nil
     local closestDistance = math.huge
 
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-            local torso = player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("UpperTorso")
-            if torso then
-                local torsoPosition, onScreen = Camera:WorldToScreenPoint(torso.Position)
+            local head = player.Character:FindFirstChild("Head")
+            if head then
+                local headPosition, onScreen = Camera:WorldToScreenPoint(head.Position)
 
                 if onScreen then
                     local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-                    local distanceFromCenter = (Vector2.new(torsoPosition.X, torsoPosition.Y) - screenCenter).Magnitude
+                    local distanceFromCenter = (Vector2.new(headPosition.X, headPosition.Y) - screenCenter).Magnitude
 
                     if distanceFromCenter < closestDistance then
                         closestDistance = distanceFromCenter
@@ -38,12 +38,12 @@ local function getClosestPlayerToCenter()
     return closestPlayer
 end
 
--- Function to aim at a player's torso with a higher upward offset
+-- Function to aim at a player's head with a slight upward offset
 local function aimAtPlayer(player)
     if player and player.Character then
-        local torso = player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("UpperTorso")
-        if torso then
-            local aimPosition = torso.Position + Vector3.new(0, 1.5, 0) -- Adjust the Y offset here (1.5 studs higher)
+        local head = player.Character:FindFirstChild("Head")
+        if head then
+            local aimPosition = head.Position + Vector3.new(0, 0.5, 0) -- Adjust the Y offset here (0.5 studs higher)
             Camera.CFrame = CFrame.new(Camera.CFrame.Position, aimPosition) -- Aim directly at the adjusted position
         end
     end
@@ -58,12 +58,8 @@ local function createESP(player)
         highlight.OutlineTransparency = 0 -- No outline transparency
         highlight.Enabled = true
 
-        -- Set glow color based on team
-        if player.TeamColor == LocalPlayer.TeamColor then
-            highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Teammate (Green)
-        else
-            highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Enemy (Red)
-        end
+        -- Set glow color to green for all players
+        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- All players (Green)
 
         highlight.Parent = player.Character.HumanoidRootPart
         espObjects[player] = highlight -- Store the ESP object
@@ -124,9 +120,9 @@ UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
     end
 end)
 
--- Toggle ESP with F key
+-- Toggle ESP with L key
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if input.KeyCode == Enum.KeyCode.F then
+    if input.KeyCode == Enum.KeyCode.L then
         espEnabled = not espEnabled -- Toggle ESP on/off
         if espEnabled then
             updateESP() -- Start updating ESP if enabled
