@@ -38,12 +38,12 @@ local function getClosestPlayerToCenter()
     return closestPlayer
 end
 
--- Function to aim at a player's torso with an upward offset
+-- Function to aim at a player's torso with a higher upward offset
 local function aimAtPlayer(player)
     if player and player.Character then
         local torso = player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("UpperTorso")
         if torso then
-            local aimPosition = torso.Position + Vector3.new(0, 1, 0) -- Adjust the Y offset here (1 stud higher)
+            local aimPosition = torso.Position + Vector3.new(0, 1.5, 0) -- Adjust the Y offset here (1.5 studs higher)
             Camera.CFrame = CFrame.new(Camera.CFrame.Position, aimPosition) -- Aim directly at the adjusted position
         end
     end
