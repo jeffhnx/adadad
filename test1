@@ -47,7 +47,7 @@ local function Aimbot()
             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
                 -- Check for team and only aim at players not on the same team
                 if player.Team ~= LocalPlayer.Team then
-                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at hair level
+                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 1, 0) -- Aiming at hair level (1 unit above the head)
                     local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
 
                     if onScreen then
@@ -64,7 +64,7 @@ local function Aimbot()
         end
 
         if closestPlayer then
-            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at hair level
+            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 1, 0) -- Aiming at hair level (1 unit above the head)
             local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
             Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition
         end
