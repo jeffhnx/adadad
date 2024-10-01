@@ -33,8 +33,8 @@ local function Aimbot()
         local closestDistance = math.huge
 
         for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local targetPosition = player.Character.HumanoidRootPart.Position
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                local targetPosition = player.Character.Head.Position -- Targeting the head
                 local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
 
                 if onScreen then
@@ -50,7 +50,7 @@ local function Aimbot()
         end
 
         if closestPlayer then
-            local targetPosition = closestPlayer.Character.HumanoidRootPart.Position
+            local targetPosition = closestPlayer.Character.Head.Position -- Targeting the head
             local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
             Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength)
         end
