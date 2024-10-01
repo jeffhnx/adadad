@@ -33,17 +33,21 @@ local function Aimbot()
         local closestDistance = math.huge
 
         for _, player in pairs(Players:GetPlayers()) do
+            -- Check if the player is not the local player and has a team
             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                local targetPosition = player.Character.Head.Position -- Targeting the head
-                local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
+                -- Check for team and team condition
+                if player.Team ~= LocalPlayer.Team then -- Only aim at players not on the same team
+                    local targetPosition = player.Character.Head.Position -- Targeting the head
+                    local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
 
-                if onScreen then
-                    local mousePosition = UserInputService:GetMouseLocation()
-                    local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+                    if onScreen then
+                        local mousePosition = UserInputService:GetMouseLocation()
+                        local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
 
-                    if distance < closestDistance then
-                        closestDistance = distance
-                        closestPlayer = player
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            closestPlayer = player
+                        end
                     end
                 end
             end
