@@ -8,22 +8,24 @@ local LocalPlayer = Players.LocalPlayer
 --// Variables
 local AimbotEnabled = true
 local ESPEnabled = true
-local AimbotStrength = 0.5 -- Sensitivity
+local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
 local RightMouseHeld = false
 
 --// ESP Function
 local function CreateESP(player)
-    local highlight = Instance.new("Highlight")
-    highlight.Parent = player.Character
-    highlight.Adornee = player.Character
-    highlight.FillColor = Color3.fromRGB(255, 0, 0)
-    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
-    highlight.Enabled = ESPEnabled
+    if player.Character and player.Character:FindFirstChild("Head") then
+        local highlight = Instance.new("Highlight")
+        highlight.Parent = player.Character
+        highlight.Adornee = player.Character
+        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+        highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+        highlight.Enabled = ESPEnabled
 
-    -- Remove highlight when player leaves
-    player.CharacterRemoving:Connect(function()
-        highlight:Destroy()
-    end)
+        -- Remove highlight when player leaves
+        player.CharacterRemoving:Connect(function()
+            highlight:Destroy()
+        end)
+    end
 end
 
 --// Aimbot Function
@@ -33,10 +35,10 @@ local function Aimbot()
         local closestDistance = math.huge
 
         for _, player in pairs(Players:GetPlayers()) do
-            -- Check if the player is not the local player and has a team
+            -- Check if the player is not the local player and has a character with a head
             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                -- Check for team and team condition
-                if player.Team ~= LocalPlayer.Team then -- Only aim at players not on the same team
+                -- Check for team and only aim at players not on the same team
+                if player.Team ~= LocalPlayer.Team then
                     local targetPosition = player.Character.Head.Position -- Targeting the head
                     local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
 
@@ -56,7 +58,7 @@ local function Aimbot()
         if closestPlayer then
             local targetPosition = closestPlayer.Character.Head.Position -- Targeting the head
             local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
-            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength)
+            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition
         end
     end
 end
@@ -81,12 +83,10 @@ end)
 
 --// Setup ESP for all players
 for _, player in pairs(Players:GetPlayers()) do
-    if player.Character then
-        CreateESP(player)
-    end
+    CreateESP(player) -- Create ESP when the player is already in the game
 end
 
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Wait()
-    CreateESP(player)
+    CreateESP(player) -- Create ESP for new players
 end)
