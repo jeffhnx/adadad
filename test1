@@ -1,138 +1,115 @@
 --// Services
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
-local Camera = workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
+local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
 
 --// Variables
-local AimbotEnabled = true
-local ESPEnabled = true
-local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
-local RightMouseHeld = false
-local refreshRate = 1 -- seconds
+local LocalPlayer = Players.LocalPlayer
 
---// ESP Function
-local function CreateESP(player)
-    local highlight = Instance.new("Highlight")
-    highlight.Parent = player.Character
-    highlight.Adornee = player.Character
+--// Create GUI
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local TitleLabel = Instance.new("TextLabel")
+local StatsButton = Instance.new("TextButton")
+local KillListButton = Instance.new("TextButton")
+local SettingsButton = Instance.new("TextButton")
+local CloseButton = Instance.new("TextButton")
 
-    -- Set highlight color based on team
-    if player.Team == LocalPlayer.Team then
-        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
-    else
-        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
-    end
+--// Configure GUI properties
+ScreenGui.Name = "MurderMystery2GUI"
+ScreenGui.Parent = StarterGui
 
-    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
-    highlight.Enabled = ESPEnabled
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0.3, 0, 0.5, 0)
+MainFrame.Position = UDim2.new(0.35, 0, 0.25, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+MainFrame.BorderSizePixel = 0
+MainFrame.BackgroundTransparency = 0.2
+MainFrame.Parent = ScreenGui
 
-    -- Remove highlight when player leaves
-    player.CharacterRemoving:Connect(function()
-        highlight:Destroy()
-    end)
-    
-    return highlight -- Return the highlight instance
-end
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(1, 0, 0.1, 0)
+TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+TitleLabel.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+TitleLabel.Text = "Murder Mystery 2"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 24
+TitleLabel.Parent = MainFrame
 
---// Aimbot Function
-local function Aimbot()
-    if RightMouseHeld and AimbotEnabled then
-        local closestPlayer = nil
-        local closestDistance = math.huge
+StatsButton.Name = "StatsButton"
+StatsButton.Size = UDim2.new(0.9, 0, 0.1, 0)
+StatsButton.Position = UDim2.new(0.05, 0, 0.15, 0)
+StatsButton.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+StatsButton.Text = "View Stats"
+StatsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatsButton.Font = Enum.Font.Gotham
+StatsButton.TextSize = 20
+StatsButton.Parent = MainFrame
 
-        for _, player in pairs(Players:GetPlayers()) do
-            -- Check if the player is not the local player and has a character with a head
-            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                -- Check for team and only aim at players not on the same team
-                if player.Team ~= LocalPlayer.Team then
-                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at hair level
-                    local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
+KillListButton.Name = "KillListButton"
+KillListButton.Size = UDim2.new(0.9, 0, 0.1, 0)
+KillListButton.Position = UDim2.new(0.05, 0, 0.3, 0)
+KillListButton.BackgroundColor3 = Color3.fromRGB(200, 100, 100)
+KillListButton.Text = "View Kill List"
+KillListButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+KillListButton.Font = Enum.Font.Gotham
+KillListButton.TextSize = 20
+KillListButton.Parent = MainFrame
 
-                    if onScreen then
-                        local mousePosition = UserInputService:GetMouseLocation()
-                        local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+SettingsButton.Name = "SettingsButton"
+SettingsButton.Size = UDim2.new(0.9, 0, 0.1, 0)
+SettingsButton.Position = UDim2.new(0.05, 0, 0.45, 0)
+SettingsButton.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
+SettingsButton.Text = "Settings"
+SettingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SettingsButton.Font = Enum.Font.Gotham
+SettingsButton.TextSize = 20
+SettingsButton.Parent = MainFrame
 
-                        if distance < closestDistance then
-                            closestDistance = distance
-                            closestPlayer = player
-                        end
-                    end
-                end
-            end
-        end
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0.9, 0, 0.1, 0)
+CloseButton.Position = UDim2.new(0.05, 0, 0.6, 0)
+CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+CloseButton.Text = "Close GUI"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Font = Enum.Font.Gotham
+CloseButton.TextSize = 20
+CloseButton.Parent = MainFrame
 
-        if closestPlayer then
-            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at hair level
-            local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
-            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition
-        end
-    end
-end
+--// Button Functions
+StatsButton.MouseButton1Click:Connect(function()
+    print("View Stats clicked") -- Implement stats viewing logic here
+end)
 
---// User Input for Right Mouse Button
-UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        RightMouseHeld = true
+KillListButton.MouseButton1Click:Connect(function()
+    print("View Kill List clicked") -- Implement kill list viewing logic here
+end)
+
+SettingsButton.MouseButton1Click:Connect(function()
+    print("Settings clicked") -- Implement settings logic here
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy() -- Close the GUI
+end)
+
+--// User Input Handling
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.RightShift and not gameProcessed then
+        ScreenGui.Enabled = not ScreenGui.Enabled -- Toggle GUI visibility with Right Shift
     end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        RightMouseHeld = false
-    end
-end)
-
---// Run Service Loop
-RunService.RenderStepped:Connect(function()
-    Aimbot()
-end)
-
---// Setup ESP for all players and refresh highlights every second
-local function RefreshESP()
-    while wait(refreshRate) do
-        for _, player in pairs(Players:GetPlayers()) do
-            if player.Character then
-                local highlight = player.Character:FindFirstChildOfClass("Highlight")
-                if highlight then
-                    -- Update highlight color based on team
-                    if player.Team == LocalPlayer.Team then
-                        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
-                    else
-                        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
-                    end
-                else
-                    -- Create ESP if it doesn't exist
-                    CreateESP(player)
-                end
-            end
-        end
-    end
+--// Function to Show GUI
+function ShowGUI()
+    ScreenGui.Enabled = true
 end
 
---// Start the ESP refresh coroutine
-coroutine.wrap(RefreshESP)()
-
---// Initial ESP setup for players
-local function SetupPlayer(player)
-    player.CharacterAdded:Connect(function(character)
-        -- Wait for the character to fully load
-        character:WaitForChild("Head")
-        CreateESP(player) -- Create ESP for new player character
-    end)
-
-    if player.Character then
-        CreateESP(player) -- Create ESP for existing character
-    end
+--// Function to Hide GUI
+function HideGUI()
+    ScreenGui.Enabled = false
 end
 
---// Setup ESP for players already in the game
-for _, player in pairs(Players:GetPlayers()) do
-    SetupPlayer(player)
-end
-
---// Listen for new players
-Players.PlayerAdded:Connect(function(player)
-    SetupPlayer(player) -- Setup ESP for new players
-end)
+-- Show the GUI on startup
+ShowGUI()
