@@ -1,81 +1,39 @@
---// Services
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local StarterGui = game:GetService("StarterGui")
+local player = game.Players.LocalPlayer
+local gui = script.Parent
 
---// Variables
-local LocalPlayer = Players.LocalPlayer
-
---// Create GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MurderMystery2GUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = StarterGui
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0.3, 0, 0.5, 0)
-MainFrame.Position = UDim2.new(0.35, 0, 0.25, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-MainFrame.BorderSizePixel = 0
-MainFrame.BackgroundTransparency = 0.5
-MainFrame.Parent = ScreenGui
-
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Name = "TitleLabel"
-TitleLabel.Size = UDim2.new(1, 0, 0.1, 0)
-TitleLabel.Position = UDim2.new(0, 0, 0, 0)
-TitleLabel.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-TitleLabel.Text = "Murder Mystery 2"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 24
-TitleLabel.Parent = MainFrame
-
--- Create a function to create buttons
-local function createButton(name, position, text, color)
-    local button = Instance.new("TextButton")
-    button.Name = name
-    button.Size = UDim2.new(0.9, 0, 0.1, 0)
-    button.Position = position
-    button.BackgroundColor3 = color
-    button.Text = text
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Font = Enum.Font.Gotham
-    button.TextSize = 20
-    button.Parent = MainFrame
-    return button
+-- Functions for button actions
+local function showStats()
+    print("Displaying player stats...")
 end
 
--- Buttons
-local StatsButton = createButton("StatsButton", UDim2.new(0.05, 0, 0.15, 0), "View Stats", Color3.fromRGB(100, 200, 100))
-local KillListButton = createButton("KillListButton", UDim2.new(0.05, 0, 0.3, 0), "View Kill List", Color3.fromRGB(200, 100, 100))
-local SettingsButton = createButton("SettingsButton", UDim2.new(0.05, 0, 0.45, 0), "Settings", Color3.fromRGB(100, 100, 200))
-local CloseButton = createButton("CloseButton", UDim2.new(0.05, 0, 0.6, 0), "Close GUI", Color3.fromRGB(255, 50, 50))
+local function showKillList()
+    print("Displaying kill list...")
+end
 
---// Button Functions
-StatsButton.MouseButton1Click:Connect(function()
-    print("View Stats clicked") -- Implement stats viewing logic here
-end)
+local function showSettings()
+    print("Displaying settings...")
+end
 
-KillListButton.MouseButton1Click:Connect(function()
-    print("View Kill List clicked") -- Implement kill list viewing logic here
-end)
+-- Button references
+local statsButton = gui:WaitForChild("TextButton") -- Adjust the name accordingly
+local killListButton = gui:WaitForChild("TextButton") -- Adjust the name accordingly
+local settingsButton = gui:WaitForChild("TextButton") -- Adjust the name accordingly
 
-SettingsButton.MouseButton1Click:Connect(function()
-    print("Settings clicked") -- Implement settings logic here
-end)
+-- Connect button actions
+statsButton.MouseButton1Click:Connect(showStats)
+killListButton.MouseButton1Click:Connect(showKillList)
+settingsButton.MouseButton1Click:Connect(showSettings)
 
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui.Enabled = false -- Close the GUI instead of destroying it
-end)
+-- Function to toggle GUI visibility
+local function toggleGui()
+    gui.Enabled = not gui.Enabled
+end
 
---// User Input Handling
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
+-- Bind the toggle function to the "G" key
+local userInputService = game:GetService("UserInputService")
+
+userInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.G and not gameProcessed then
-        ScreenGui.Enabled = not ScreenGui.Enabled -- Toggle GUI visibility with G key
+        toggleGui()
     end
 end)
-
--- Show the GUI on startup
-ScreenGui.Enabled = true
