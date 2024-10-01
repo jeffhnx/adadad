@@ -1,0 +1,137 @@
+--// Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+--// GUI Elements
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local ESPButton = Instance.new("TextButton")
+local SpeedButton = Instance.new("TextButton")
+local FlyButton = Instance.new("TextButton")
+
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+--// Main Frame
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.Position = UDim2.new(0.85, 0, 0.5, 0)
+MainFrame.Size = UDim2.new(0, 200, 0, 250)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+--// ESP Button
+ESPButton.Parent = MainFrame
+ESPButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+ESPButton.Size = UDim2.new(0, 180, 0, 50)
+ESPButton.Position = UDim2.new(0, 10, 0, 10)
+ESPButton.Font = Enum.Font.SourceSans
+ESPButton.Text = "Toggle ESP"
+ESPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ESPButton.TextSize = 20
+
+--// Speed Button
+SpeedButton.Parent = MainFrame
+SpeedButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+SpeedButton.Size = UDim2.new(0, 180, 0, 50)
+SpeedButton.Position = UDim2.new(0, 10, 0, 70)
+SpeedButton.Font = Enum.Font.SourceSans
+SpeedButton.Text = "Toggle Speed"
+SpeedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedButton.TextSize = 20
+
+--// Fly Button
+FlyButton.Parent = MainFrame
+FlyButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+FlyButton.Size = UDim2.new(0, 180, 0, 50)
+FlyButton.Position = UDim2.new(0, 10, 0, 130)
+FlyButton.Font = Enum.Font.SourceSans
+FlyButton.Text = "Toggle Fly"
+FlyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlyButton.TextSize = 20
+
+--// Variables
+local ESPEnabled = false
+local SpeedEnabled = false
+local FlyEnabled = false
+local WalkSpeed = 16 -- Default walk speed in Roblox
+local SpeedBoost = 50 -- Custom walk speed
+
+--// ESP Function
+local function ToggleESP()
+    ESPEnabled = not ESPEnabled
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local highlight = player.Character:FindFirstChild("Highlight")
+            if ESPEnabled and not highlight then
+                -- Add ESP highlight
+                local espHighlight = Instance.new("Highlight")
+                espHighlight.Parent = player.Character
+                espHighlight.Adornee = player.Character
+                espHighlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red color for enemies
+                espHighlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+                espHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            elseif not ESPEnabled and highlight then
+                -- Remove ESP
+                highlight:Destroy()
+            end
+        end
+    end
+end
+
+--// Speed Boost Function
+local function ToggleSpeed()
+    SpeedEnabled = not SpeedEnabled
+    if SpeedEnabled then
+        LocalPlayer.Character.Humanoid.WalkSpeed = SpeedBoost
+    else
+        LocalPlayer.Character.Humanoid.WalkSpeed = WalkSpeed
+    end
+end
+
+--// Fly Hack Function
+local function ToggleFly()
+    FlyEnabled = not FlyEnabled
+    if FlyEnabled then
+        LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Physics) -- Flying mode
+        LocalPlayer.Character.PrimaryPart.Velocity = Vector3.new(0, 100, 0) -- Vertical lift
+    else
+        LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+    end
+end
+
+--// Button Click Events
+ESPButton.MouseButton1Click:Connect(function()
+    ToggleESP()
+end)
+
+SpeedButton.MouseButton1Click:Connect(function()
+    ToggleSpeed()
+end)
+
+FlyButton.MouseButton1Click:Connect(function()
+    ToggleFly()
+end)
+
+--// Continuously Update ESP for New Players
+RunService.RenderStepped:Connect(function()
+    if ESPEnabled then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local highlight = player.Character:FindFirstChild("Highlight")
+                if not highlight then
+                    -- Add ESP highlight for new players
+                    local espHighlight = Instance.new("Highlight")
+                    espHighlight.Parent = player.Character
+                    espHighlight.Adornee = player.Character
+                    espHighlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
+                    espHighlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+                    espHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                end
+            end
+        end
+    end
+end)
