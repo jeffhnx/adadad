@@ -1,8 +1,7 @@
 --// Services
 local Players = game:GetService("Players")
-local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+local StarterGui = game:GetService("StarterGui")
 
 --// Variables
 local LocalPlayer = Players.LocalPlayer
@@ -68,7 +67,7 @@ SettingsButton.MouseButton1Click:Connect(function()
 end)
 
 CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy() -- Close the GUI
+    ScreenGui.Enabled = false -- Close the GUI instead of destroying it
 end)
 
 --// User Input Handling
@@ -78,15 +77,5 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
---// Function to Show GUI
-function ShowGUI()
-    ScreenGui.Enabled = true
-end
-
---// Function to Hide GUI
-function HideGUI()
-    ScreenGui.Enabled = false
-end
-
 -- Show the GUI on startup
-ShowGUI()
+ScreenGui.Enabled = true
