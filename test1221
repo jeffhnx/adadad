@@ -1,0 +1,82 @@
+--// Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+
+--// Variables
+local autoCollect = false
+local teleportEnabled = false
+
+--// Create Main Frame
+local mainFrame = Instance.new("Frame", ScreenGui)
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
+mainFrame.Position = UDim2.new(0.8, 0, 0.5, -200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+mainFrame.BorderSizePixel = 0
+
+--// Create Title Label
+local titleLabel = Instance.new("TextLabel", mainFrame)
+titleLabel.Size = UDim2.new(1, 0, 0, 50)
+titleLabel.Text = "Pet Simulator X Mod Menu"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+titleLabel.TextScaled = true
+
+--// Auto Collect Button
+local autoCollectButton = Instance.new("TextButton", mainFrame)
+autoCollectButton.Size = UDim2.new(1, 0, 0, 50)
+autoCollectButton.Position = UDim2.new(0, 0, 0, 50)
+autoCollectButton.Text = "Toggle Auto Collect"
+autoCollectButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+
+--// Teleport Button
+local teleportButton = Instance.new("TextButton", mainFrame)
+teleportButton.Size = UDim2.new(1, 0, 0, 50)
+teleportButton.Position = UDim2.new(0, 0, 0, 100)
+teleportButton.Text = "Toggle Teleport"
+teleportButton.BackgroundColor3 = Color3.fromRGB(0, 0, 200)
+
+--// Function to Auto Collect Coins
+local function AutoCollectCoins()
+    while autoCollect do
+        wait(0.5)
+        for _, coin in pairs(workspace:GetChildren()) do
+            if coin:IsA("Part") and coin.Name:find("Coin") then
+                fireclickdetector(coin:FindFirstChild("ClickDetector"))
+            end
+        end
+    end
+end
+
+--// Button Functions
+autoCollectButton.MouseButton1Click:Connect(function()
+    autoCollect = not autoCollect
+    autoCollectButton.BackgroundColor3 = autoCollect and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(0, 200, 0)
+    
+    if autoCollect then
+        AutoCollectCoins()
+    end
+end)
+
+teleportButton.MouseButton1Click:Connect(function()
+    teleportEnabled = not teleportEnabled
+    teleportButton.BackgroundColor3 = teleportEnabled and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(0, 0, 200)
+
+    if teleportEnabled then
+        -- Example teleportation to a specific area
+        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 10, 0) -- Change coordinates as needed
+    end
+end)
+
+--// Function to Handle Teleportation
+game:GetService("RunService").RenderStepped:Connect(function()
+    if teleportEnabled then
+        -- Update teleportation logic here, if needed
+    end
+end)
+
+--// Clean Up
+game.Players.PlayerRemoving:Connect(function()
+    ScreenGui:Destroy()
+end)
