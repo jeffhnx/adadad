@@ -14,28 +14,26 @@ local refreshRate = 1 -- seconds
 
 --// ESP Function
 local function CreateESP(player)
-    if player.Character and player.Character:FindFirstChild("Head") then
-        local highlight = Instance.new("Highlight")
-        highlight.Parent = player.Character
-        highlight.Adornee = player.Character
+    local highlight = Instance.new("Highlight")
+    highlight.Parent = player.Character
+    highlight.Adornee = player.Character
 
-        -- Set highlight color based on team
-        if player.Team == LocalPlayer.Team then
-            highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
-        else
-            highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
-        end
-
-        highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
-        highlight.Enabled = ESPEnabled
-
-        -- Remove highlight when player leaves
-        player.CharacterRemoving:Connect(function()
-            highlight:Destroy()
-        end)
-        
-        return highlight -- Return the highlight instance
+    -- Set highlight color based on team
+    if player.Team == LocalPlayer.Team then
+        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
+    else
+        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
     end
+
+    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+    highlight.Enabled = ESPEnabled
+
+    -- Remove highlight when player leaves
+    player.CharacterRemoving:Connect(function()
+        highlight:Destroy()
+    end)
+    
+    return highlight -- Return the highlight instance
 end
 
 --// Aimbot Function
@@ -117,11 +115,24 @@ end
 coroutine.wrap(RefreshESP)()
 
 --// Initial ESP setup for players
-for _, player in pairs(Players:GetPlayers()) do
-    CreateESP(player) -- Create ESP when the player is already in the game
+local function SetupPlayer(player)
+    player.CharacterAdded:Connect(function(character)
+        -- Wait for the character to fully load
+        character:WaitForChild("Head")
+        CreateESP(player) -- Create ESP for new player character
+    end)
+
+    if player.Character then
+        CreateESP(player) -- Create ESP for existing character
+    end
 end
 
+--// Setup ESP for players already in the game
+for _, player in pairs(Players:GetPlayers()) do
+    SetupPlayer(player)
+end
+
+--// Listen for new players
 Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Wait()
-    CreateESP(player) -- Create ESP for new players
+    SetupPlayer(player) -- Setup ESP for new players
 end)
