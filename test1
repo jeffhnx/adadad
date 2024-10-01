@@ -6,19 +6,19 @@ local ScreenGui = Instance.new("ScreenGui", PlayerGui)
 
 --// Variables
 local autoCollect = false
-local teleportEnabled = false
+local infiniteLuck = false
 
 --// Create Main Frame
 local mainFrame = Instance.new("Frame", ScreenGui)
-mainFrame.Size = UDim2.new(0, 300, 0, 400)
-mainFrame.Position = UDim2.new(0.8, 0, 0.5, -200)
+mainFrame.Size = UDim2.new(0, 300, 0, 200)
+mainFrame.Position = UDim2.new(0.8, 0, 0.5, -100)
 mainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 mainFrame.BorderSizePixel = 0
 
 --// Create Title Label
 local titleLabel = Instance.new("TextLabel", mainFrame)
 titleLabel.Size = UDim2.new(1, 0, 0, 50)
-titleLabel.Text = "Pet Simulator X Mod Menu"
+titleLabel.Text = "Lucky Blox Mod Menu"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 titleLabel.TextScaled = true
@@ -30,20 +30,20 @@ autoCollectButton.Position = UDim2.new(0, 0, 0, 50)
 autoCollectButton.Text = "Toggle Auto Collect"
 autoCollectButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
 
---// Teleport Button
-local teleportButton = Instance.new("TextButton", mainFrame)
-teleportButton.Size = UDim2.new(1, 0, 0, 50)
-teleportButton.Position = UDim2.new(0, 0, 0, 100)
-teleportButton.Text = "Toggle Teleport"
-teleportButton.BackgroundColor3 = Color3.fromRGB(0, 0, 200)
+--// Infinite Luck Button
+local infiniteLuckButton = Instance.new("TextButton", mainFrame)
+infiniteLuckButton.Size = UDim2.new(1, 0, 0, 50)
+infiniteLuckButton.Position = UDim2.new(0, 0, 0, 100)
+infiniteLuckButton.Text = "Toggle Infinite Luck"
+infiniteLuckButton.BackgroundColor3 = Color3.fromRGB(0, 0, 200)
 
---// Function to Auto Collect Coins
-local function AutoCollectCoins()
+--// Function to Auto Collect Lucky Blox
+local function AutoCollectLuckyBlox()
     while autoCollect do
         wait(0.5)
-        for _, coin in pairs(workspace:GetChildren()) do
-            if coin:IsA("Part") and coin.Name:find("Coin") then
-                fireclickdetector(coin:FindFirstChild("ClickDetector"))
+        for _, block in pairs(workspace:GetChildren()) do
+            if block:IsA("Part") and block.Name:find("LuckyBlock") then
+                fireclickdetector(block:FindFirstChild("ClickDetector"))
             end
         end
     end
@@ -53,26 +53,22 @@ end
 autoCollectButton.MouseButton1Click:Connect(function()
     autoCollect = not autoCollect
     autoCollectButton.BackgroundColor3 = autoCollect and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(0, 200, 0)
-    
+
     if autoCollect then
-        AutoCollectCoins()
+        AutoCollectLuckyBlox()
     end
 end)
 
-teleportButton.MouseButton1Click:Connect(function()
-    teleportEnabled = not teleportEnabled
-    teleportButton.BackgroundColor3 = teleportEnabled and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(0, 0, 200)
+infiniteLuckButton.MouseButton1Click:Connect(function()
+    infiniteLuck = not infiniteLuck
+    infiniteLuckButton.BackgroundColor3 = infiniteLuck and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(0, 0, 200)
 
-    if teleportEnabled then
-        -- Example teleportation to a specific area
-        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 10, 0) -- Change coordinates as needed
-    end
-end)
-
---// Function to Handle Teleportation
-game:GetService("RunService").RenderStepped:Connect(function()
-    if teleportEnabled then
-        -- Update teleportation logic here, if needed
+    if infiniteLuck then
+        -- Code to implement infinite luck can be added here
+        -- For example: Set some game-specific variables to increase luck
+        print("Infinite luck enabled!")
+    else
+        print("Infinite luck disabled!")
     end
 end)
 
