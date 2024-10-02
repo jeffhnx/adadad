@@ -18,7 +18,13 @@ local function CreateESP(player)
     highlight.Parent = player.Character
     highlight.Adornee = player.Character
 
-    highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for all players
+    -- Set highlight color based on team
+    if player.Team == LocalPlayer.Team then
+        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
+    else
+        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
+    end
+
     highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
     highlight.Enabled = ESPEnabled
 
@@ -39,16 +45,19 @@ local function Aimbot()
         for _, player in pairs(Players:GetPlayers()) do
             -- Check if the player is not the local player and has a character with a head
             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at hair level
-                local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
+                -- Check for team and only aim at players not on the same team
+                if player.Team ~= LocalPlayer.Team then
+                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at hair level
+                    local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
 
-                if onScreen then
-                    local mousePosition = UserInputService:GetMouseLocation()
-                    local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+                    if onScreen then
+                        local mousePosition = UserInputService:GetMouseLocation()
+                        local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
 
-                    if distance < closestDistance then
-                        closestDistance = distance
-                        closestPlayer = player
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            closestPlayer = player
+                        end
                     end
                 end
             end
@@ -87,7 +96,12 @@ local function RefreshESP()
             if player.Character then
                 local highlight = player.Character:FindFirstChildOfClass("Highlight")
                 if highlight then
-                    highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for all players
+                    -- Update highlight color based on team
+                    if player.Team == LocalPlayer.Team then
+                        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
+                    else
+                        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
+                    end
                 else
                     -- Create ESP if it doesn't exist
                     CreateESP(player)
