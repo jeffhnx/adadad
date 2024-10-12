@@ -8,15 +8,19 @@ local LocalPlayer = Players.LocalPlayer
 --// Variables
 local AimbotEnabled = true
 local ESPEnabled = true
-local AimbotStrength = 0.5 -- Sensitivity for aiming
+local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
 local LeftControlHeld = false
 local refreshRate = 1 -- seconds
+
+-- Replace with the name of your team to check against
+local TargetTeamName = "EnemyTeam" -- Change this to your desired team name
 
 --// ESP Function
 local function CreateESP(player)
     local highlight = Instance.new("Highlight")
     highlight.Parent = player.Character
     highlight.Adornee = player.Character
+
     highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for all players
     highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
     highlight.Enabled = ESPEnabled
@@ -25,35 +29,40 @@ local function CreateESP(player)
     player.CharacterRemoving:Connect(function()
         highlight:Destroy()
     end)
-
-    return highlight
+    
+    return highlight -- Return the highlight instance
 end
 
 --// Aimbot Function
 local function Aimbot()
     if LeftControlHeld and AimbotEnabled then
-        local closestPlayer, closestDistance = nil, math.huge
+        local closestPlayer = nil
+        local closestDistance = math.huge
 
         for _, player in pairs(Players:GetPlayers()) do
+            -- Check if the player has a character with a head and is on the target team
             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0)
-                local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
+                local playerTeam = player:GetAttribute("Team") -- Assuming teams are stored as attributes
+                if playerTeam == TargetTeamName then
+                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at head level
+                    local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
 
-                if onScreen then
-                    local mousePosition = UserInputService:GetMouseLocation()
-                    local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+                    if onScreen then
+                        local mousePosition = UserInputService:GetMouseLocation()
+                        local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
 
-                    if distance < closestDistance then
-                        closestDistance = distance
-                        closestPlayer = player
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            closestPlayer = player
+                        end
                     end
                 end
             end
         end
 
         if closestPlayer then
-            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0)
-            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPosition), AimbotStrength)
+            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at head level
+            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPosition), AimbotStrength) -- Smooth transition
         end
     end
 end
@@ -61,29 +70,31 @@ end
 --// User Input for Left Control Key
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.LeftControl then
-        LeftControlHeld = true
+        LeftControlHeld = true -- Left control held to enable aimbot
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.LeftControl then
-        LeftControlHeld = false
+        LeftControlHeld = false -- Release left control to disable aimbot
     end
 end)
 
 --// Run Service Loop
 RunService.RenderStepped:Connect(Aimbot)
 
---// Setup ESP for players
+--// Setup ESP for all players and refresh highlights every second
 local function RefreshESP()
     while wait(refreshRate) do
         for _, player in pairs(Players:GetPlayers()) do
             if player.Character then
                 local highlight = player.Character:FindFirstChildOfClass("Highlight")
                 if highlight then
-                    highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Update color
+                    -- Update highlight color (all players red)
+                    highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for all players
                 else
-                    CreateESP(player) -- Create ESP if it doesn't exist
+                    -- Create ESP if it doesn't exist
+                    CreateESP(player)
                 end
             end
         end
@@ -93,11 +104,12 @@ end
 --// Start the ESP refresh coroutine
 coroutine.wrap(RefreshESP)()
 
---// Setup initial ESP for existing players
+--// Initial ESP setup for players
 local function SetupPlayer(player)
     player.CharacterAdded:Connect(function(character)
+        -- Wait for the character to fully load
         character:WaitForChild("Head")
-        CreateESP(player) -- Create ESP for new character
+        CreateESP(player) -- Create ESP for new player character
     end)
 
     if player.Character then
@@ -105,7 +117,7 @@ local function SetupPlayer(player)
     end
 end
 
---// Initialize ESP for players already in the game
+--// Setup ESP for players already in the game
 for _, player in pairs(Players:GetPlayers()) do
     SetupPlayer(player)
 end
