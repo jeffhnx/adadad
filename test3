@@ -1,97 +1,178 @@
--- Services
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+--// Services
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
 
--- Constants
-local DriftStrengthDefault = 1.5  -- Default drift strength
-local DriftSpeedDefault = 50      -- Default speed threshold for drift
-local MaxSpeed = 200              -- Max speed of the car before drifting is activated
+--// Variables
+local AimbotEnabled = true
+local ESPEnabled = true
+local AimbotStrength = 0.5 -- Default sensitivity for how quickly to aim at the target
+local LeftControlHeld = false
+local refreshRate = 1 -- seconds
 
--- GUI Elements
-local player = Players.LocalPlayer
-local car = player.Character and player.Character:WaitForChild("Car")
-local seat = car and car:WaitForChild("VehicleSeat")
+--// Create GUI
+local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0.2, 0, 0.2, 0)
+frame.Position = UDim2.new(0.75, 0, 0.75, 0)
+frame.BackgroundTransparency = 0.2
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 
--- Create GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = player:WaitForChild("PlayerGui")
+local sliderLabel = Instance.new("TextLabel", frame)
+sliderLabel.Text = "Aim Sensitivity"
+sliderLabel.Size = UDim2.new(1, 0, 0.3, 0)
+sliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+sliderLabel.BackgroundTransparency = 1
 
-local driftButton = Instance.new("TextButton")
-driftButton.Size = UDim2.new(0, 200, 0, 50)
-driftButton.Position = UDim2.new(0, 20, 0, 100)
-driftButton.Text = "Enable Drift"
-driftButton.Parent = screenGui
+local slider = Instance.new("TextButton", frame)
+slider.Size = UDim2.new(0.8, 0, 0.3, 0)
+slider.Position = UDim2.new(0.1, 0, 0.5, 0)
+slider.Text = "Adjust Sensitivity"
+slider.TextColor3 = Color3.fromRGB(255, 255, 255)
+slider.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 
-local driftStrengthSlider = Instance.new("TextButton")
-driftStrengthSlider.Size = UDim2.new(0, 200, 0, 50)
-driftStrengthSlider.Position = UDim2.new(0, 20, 0, 200)
-driftStrengthSlider.Text = "Drift Strength: 1.5"
-driftStrengthSlider.Parent = screenGui
+--// Update AimbotStrength based on slider
+slider.MouseButton1Down:Connect(function()
+    local mouse = game.Players.LocalPlayer:GetMouse()
+    
+    local function updateSlider()
+        local newPosition = math.clamp((mouse.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+        AimbotStrength = newPosition -- Update sensitivity
+        slider.Text = string.format("Sensitivity: %.2f", AimbotStrength)
+    end
 
-local driftSpeedSlider = Instance.new("TextButton")
-driftSpeedSlider.Size = UDim2.new(0, 200, 0, 50)
-driftSpeedSlider.Position = UDim2.new(0, 20, 0, 300)
-driftSpeedSlider.Text = "Drift Speed: 50"
-driftSpeedSlider.Parent = screenGui
+    updateSlider()
+    local dragConnection
+    dragConnection = mouse.Move:Connect(updateSlider)
+    mouse.Button1Up:Connect(function()
+        dragConnection:Disconnect()
+    end)
+end)
 
--- Variables
-local AimbotEnabled = false
-local DriftStrength = DriftStrengthDefault
-local DriftSpeed = DriftSpeedDefault
-local IsDrifting = false
+--// ESP Function
+local function CreateESP(player)
+    local highlight = Instance.new("Highlight")
+    highlight.Parent = player.Character
+    highlight.Adornee = player.Character
 
--- Drift Toggle Button Function
-driftButton.MouseButton1Click:Connect(function()
-    IsDrifting = not IsDrifting
-    if IsDrifting then
-        driftButton.Text = "Disable Drift"
+    -- Set highlight color based on team
+    if player.Team == LocalPlayer.Team then
+        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
     else
-        driftButton.Text = "Enable Drift"
+        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
+    end
+
+    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+    highlight.Enabled = ESPEnabled
+
+    -- Remove highlight when player leaves
+    player.CharacterRemoving:Connect(function()
+        highlight:Destroy()
+    end)
+    
+    return highlight -- Return the highlight instance
+end
+
+--// Aimbot Function
+local function Aimbot()
+    if LeftControlHeld and AimbotEnabled then
+        local closestPlayer = nil
+        local closestDistance = math.huge
+
+        for _, player in pairs(Players:GetPlayers()) do
+            -- Check if the player is not the local player and has a character with a head
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                -- Check for team and only aim at players not on the same team
+                if player.Team ~= LocalPlayer.Team then
+                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at hair level
+                    local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
+
+                    if onScreen then
+                        local mousePosition = UserInputService:GetMouseLocation()
+                        local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            closestPlayer = player
+                        end
+                    end
+                end
+            end
+        end
+
+        if closestPlayer then
+            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at hair level
+            local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
+            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition based on sensitivity
+        end
+    end
+end
+
+--// User Input for Left Control Key
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        LeftControlHeld = true -- Left control held to enable aimbot
     end
 end)
 
--- Drift Strength Slider Logic
-driftStrengthSlider.MouseButton1Click:Connect(function()
-    DriftStrength = DriftStrength + 0.5
-    if DriftStrength > 3 then
-        DriftStrength = 0.5 -- Reset to default after max
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        LeftControlHeld = false -- Release left control to disable aimbot
     end
-    driftStrengthSlider.Text = "Drift Strength: " .. DriftStrength
 end)
 
--- Drift Speed Slider Logic
-driftSpeedSlider.MouseButton1Click:Connect(function()
-    DriftSpeed = DriftSpeed + 10
-    if DriftSpeed > 150 then
-        DriftSpeed = 50 -- Reset to default after max
-    end
-    driftSpeedSlider.Text = "Drift Speed: " .. DriftSpeed
+--// Run Service Loop
+RunService.RenderStepped:Connect(function()
+    Aimbot()
 end)
 
--- Drift Function
-local function HandleDrift()
-    if seat and IsDrifting then
-        local speed = seat.Throttle
-        local steering = seat.Steer
-
-        -- Only drift if car is moving fast enough and steering is active
-        if speed > DriftSpeed and steering ~= 0 then
-            local currentVelocity = seat.Velocity
-            local driftDirection = seat.CFrame.LookVector
-            local lateralFriction = seat.Velocity:Dot(driftDirection)
-
-            -- Apply drift force by manipulating velocity
-            if lateralFriction > 0 then
-                local driftForce = Vector3.new(currentVelocity.X * DriftStrength, 0, currentVelocity.Z * DriftStrength)
-                seat.Velocity = seat.Velocity + driftForce
+--// Setup ESP for all players and refresh highlights every second
+local function RefreshESP()
+    while wait(refreshRate) do
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                local highlight = player.Character:FindFirstChildOfClass("Highlight")
+                if highlight then
+                    -- Update highlight color based on team
+                    if player.Team == LocalPlayer.Team then
+                        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
+                    else
+                        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
+                    end
+                else
+                    -- Create ESP if it doesn't exist
+                    CreateESP(player)
+                end
             end
         end
     end
 end
 
--- Update the car's behavior every frame
-RunService.Heartbeat:Connect(function()
-    HandleDrift()
+--// Start the ESP refresh coroutine
+coroutine.wrap(RefreshESP)()
+
+--// Initial ESP setup for players
+local function SetupPlayer(player)
+    player.CharacterAdded:Connect(function(character)
+        -- Wait for the character to fully load
+        character:WaitForChild("Head")
+        CreateESP(player) -- Create ESP for new player character
+    end)
+
+    if player.Character then
+        CreateESP(player) -- Create ESP for existing character
+    end
+end
+
+--// Setup ESP for players already in the game
+for _, player in pairs(Players:GetPlayers()) do
+    SetupPlayer(player)
+end
+
+--// Listen for new players
+Players.PlayerAdded:Connect(function(player)
+    SetupPlayer(player) -- Setup ESP for new players
 end)
