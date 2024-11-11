@@ -5,21 +5,36 @@ local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
---// Variables
-local AimbotEnabled = true
-local ESPEnabled = true
+--// Variables (connected to GUI toggles)
+local AimbotEnabled = false
+local ESPEnabled = false
 local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
 local refreshRate = 1 -- seconds
 
---// ESP Function
+--// GUI Elements (tied to toggles)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local toggleESPButton = Instance.new("TextButton")
+toggleESPButton.Text = "Toggle ESP"
+toggleESPButton.Size = UDim2.new(0, 100, 0, 50)
+toggleESPButton.Position = UDim2.new(0, 10, 0, 10)
+toggleESPButton.Parent = screenGui
+
+local toggleAimbotButton = Instance.new("TextButton")
+toggleAimbotButton.Text = "Toggle Aimbot"
+toggleAimbotButton.Size = UDim2.new(0, 100, 0, 50)
+toggleAimbotButton.Position = UDim2.new(0, 10, 0, 70)
+toggleAimbotButton.Parent = screenGui
+
+--// ESP Function (without team check)
 local function CreateESP(player)
     local highlight = Instance.new("Highlight")
     highlight.Parent = player.Character
     highlight.Adornee = player.Character
 
-    -- Set highlight color
-    highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for all players (no team check)
-
+    -- Set highlight color (no team check, just red)
+    highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for all players
     highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
     highlight.Enabled = ESPEnabled
 
@@ -28,7 +43,7 @@ local function CreateESP(player)
         highlight:Destroy()
     end)
 
-    return highlight -- Return the highlight instance
+    return highlight
 end
 
 --// Aimbot Function (Head Tracking)
@@ -75,7 +90,7 @@ local function RefreshESP()
             if player.Character then
                 local highlight = player.Character:FindFirstChildOfClass("Highlight")
                 if highlight then
-                    -- Set color to red as there is no team check
+                    -- Update highlight color to red (no team check)
                     highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for all players
                 else
                     -- Create ESP if it doesn't exist
@@ -110,4 +125,17 @@ end
 --// Listen for new players
 Players.PlayerAdded:Connect(function(player)
     SetupPlayer(player) -- Setup ESP for new players
+end)
+
+--// GUI Toggle Button Events
+toggleESPButton.MouseButton1Click:Connect(function()
+    ESPEnabled = not ESPEnabled
+    -- Update button text to show current state
+    toggleESPButton.Text = ESPEnabled and "Disable ESP" or "Enable ESP"
+end)
+
+toggleAimbotButton.MouseButton1Click:Connect(function()
+    AimbotEnabled = not AimbotEnabled
+    -- Update button text to show current state
+    toggleAimbotButton.Text = AimbotEnabled and "Disable Aimbot" or "Enable Aimbot"
 end)
