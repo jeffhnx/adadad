@@ -10,7 +10,7 @@ local AimbotEnabled = false
 local ESPEnabled = false
 local TeamCheckEnabled = false
 local AimSmoothing = 0 -- Controls aim smoothing
-local AimKey = Enum.UserInputType.MouseButton2 -- Default to right-click
+local AimKey = Enum.UserInputType.MouseButton2 -- Right-click to aim by default
 
 --// UI Setup
 local ScreenGui = Instance.new("ScreenGui")
@@ -142,23 +142,21 @@ SetAimKeyButton.MouseButton1Click:Connect(function()
     end)
 end)
 
--- ESP Function (without team check)
+-- ESP Function
 local function CreateESP(player)
-    local highlight = Instance.new("Highlight")
-    highlight.Parent = player.Character
-    highlight.Adornee = player.Character
+    if player.Character and player.Character:FindFirstChild("Head") then
+        local highlight = Instance.new("Highlight")
+        highlight.Parent = player.Character
+        highlight.Adornee = player.Character
+        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
+        highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+        highlight.Enabled = ESPEnabled
 
-    -- Set highlight color (without team check)
-    highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for all players
-    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
-    highlight.Enabled = ESPEnabled
-
-    -- Remove highlight when player leaves
-    player.CharacterRemoving:Connect(function()
-        highlight:Destroy()
-    end)
-
-    return highlight
+        -- Remove highlight when player leaves
+        player.CharacterRemoving:Connect(function()
+            highlight:Destroy()
+        end)
+    end
 end
 
 -- Aimbot Function
@@ -167,8 +165,9 @@ local function Aimbot()
         local closestPlayer = nil
         local closestDistance = math.huge
 
+        -- Loop through players to find the closest target
         for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and (not TeamCheckEnabled or player.Team ~= LocalPlayer.Team) and player.Character and player.Character:FindFirstChild("Head") then
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
                 local targetPosition = player.Character.Head.Position
                 local distance = (Camera.CFrame.Position - targetPosition).Magnitude
                 if distance < closestDistance then
@@ -178,7 +177,8 @@ local function Aimbot()
             end
         end
 
-        if closestPlayer and UserInputService:IsMouseButtonPressed(AimKey) then
+        -- If a target is found, aim at them
+        if closestPlayer then
             local targetPosition = closestPlayer.Character.Head.Position
             local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
             Camera.CFrame = Camera.CFrame:Lerp(cameraCFrame, AimSmoothing / 10)
@@ -191,23 +191,18 @@ RunService.RenderStepped:Connect(function()
     Aimbot()
 end)
 
--- Setup ESP for all players and refresh highlights every second
-local function RefreshESP()
-    while wait(1) do
-        for _, player in pairs(Players:GetPlayers()) do
-            if player.Character then
-                local highlight = player.Character:FindFirstChildOfClass("Highlight")
-                if highlight then
-                    -- Update highlight color to red (without team check)
-                    highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for all players
-                else
-                    -- Create ESP if it doesn't exist
-                    CreateESP(player)
-                end
-            end
+-- Setup ESP for all players
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(character)
+        CreateESP(player)
+    end)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    if player.Character then
+        local highlight = player.Character:FindFirstChildOfClass("Highlight")
+        if highlight then
+            highlight:Destroy()
         end
     end
-end
-
--- Start the ESP refresh coroutine
-coroutine.wrap(RefreshESP)()
+end)
