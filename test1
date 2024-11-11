@@ -1,138 +1,98 @@
 --// Services
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
-local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
 --// Variables
-local AimbotEnabled = true
-local ESPEnabled = true
-local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
-local LeftControlHeld = false
-local refreshRate = 1 -- seconds
+local GUIVisible = true
+local AimbotStrength = 0.5
 
---// ESP Function
-local function CreateESP(player)
-    local highlight = Instance.new("Highlight")
-    highlight.Parent = player.Character
-    highlight.Adornee = player.Character
+--// Create ScreenGui and GUI elements
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-    -- Set highlight color based on team
-    if player.Team == LocalPlayer.Team then
-        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
-    else
-        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
-    end
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 300, 0, 200)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 2
+MainFrame.Visible = GUIVisible
+MainFrame.Parent = ScreenGui
 
-    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
-    highlight.Enabled = ESPEnabled
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0, 100, 0, 40)
+ToggleButton.Position = UDim2.new(0, 10, 0, 10)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+ToggleButton.Text = "Toggle GUI"
+ToggleButton.Parent = MainFrame
 
-    -- Remove highlight when player leaves
-    player.CharacterRemoving:Connect(function()
-        highlight:Destroy()
-    end)
-    
-    return highlight -- Return the highlight instance
-end
+local SliderLabel = Instance.new("TextLabel")
+SliderLabel.Size = UDim2.new(0, 100, 0, 30)
+SliderLabel.Position = UDim2.new(0, 10, 0, 60)
+SliderLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SliderLabel.Text = "Aimbot Strength"
+SliderLabel.Parent = MainFrame
 
---// Aimbot Function
-local function Aimbot()
-    if LeftControlHeld and AimbotEnabled then
-        local closestPlayer = nil
-        local closestDistance = math.huge
+local Slider = Instance.new("Frame")
+Slider.Size = UDim2.new(0, 200, 0, 10)
+Slider.Position = UDim2.new(0, 10, 0, 100)
+Slider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Slider.Parent = MainFrame
 
-        for _, player in pairs(Players:GetPlayers()) do
-            -- Check if the player is not the local player and has a character with a head
-            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                -- Check for team and only aim at players not on the same team
-                if player.Team ~= LocalPlayer.Team then
-                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at hair level
-                    local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
+local SliderKnob = Instance.new("Frame")
+SliderKnob.Size = UDim2.new(0, 20, 0, 20)
+SliderKnob.Position = UDim2.new(0, 0, 0, -5)
+SliderKnob.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+SliderKnob.Parent = Slider
 
-                    if onScreen then
-                        local mousePosition = UserInputService:GetMouseLocation()
-                        local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+local SliderInput = Instance.new("TextLabel")
+SliderInput.Size = UDim2.new(0, 100, 0, 30)
+SliderInput.Position = UDim2.new(0, 10, 0, 150)
+SliderInput.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SliderInput.Text = "Strength: " .. tostring(AimbotStrength)
+SliderInput.Parent = MainFrame
 
-                        if distance < closestDistance then
-                            closestDistance = distance
-                            closestPlayer = player
-                        end
-                    end
-                end
+--// Toggle GUI visibility
+ToggleButton.MouseButton1Click:Connect(function()
+    GUIVisible = not GUIVisible
+    MainFrame.Visible = GUIVisible
+end)
+
+--// Slider functionality
+SliderKnob.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local dragging = true
+        local startPos = input.Position.X
+
+        local function updateSlider()
+            if dragging then
+                local delta = input.Position.X - startPos
+                local newX = math.clamp(delta, 0, Slider.AbsoluteSize.X - SliderKnob.AbsoluteSize.X)
+                SliderKnob.Position = UDim2.new(0, newX, 0, -5)
+
+                -- Update Aimbot Strength based on the slider position
+                AimbotStrength = (newX / (Slider.AbsoluteSize.X - SliderKnob.AbsoluteSize.X)) * 2
+                SliderInput.Text = "Strength: " .. math.round(AimbotStrength * 100) / 100
             end
         end
 
-        if closestPlayer then
-            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at hair level
-            local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
-            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition
+        local function stopDragging()
+            dragging = false
         end
-    end
-end
 
---// User Input for Left Control Key
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.LeftControl then
-        LeftControlHeld = true -- Left control held to enable aimbot
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.LeftControl then
-        LeftControlHeld = false -- Release left control to disable aimbot
-    end
-end)
-
---// Run Service Loop
-RunService.RenderStepped:Connect(function()
-    Aimbot()
-end)
-
---// Setup ESP for all players and refresh highlights every second
-local function RefreshESP()
-    while wait(refreshRate) do
-        for _, player in pairs(Players:GetPlayers()) do
-            if player.Character then
-                local highlight = player.Character:FindFirstChildOfClass("Highlight")
-                if highlight then
-                    -- Update highlight color based on team
-                    if player.Team == LocalPlayer.Team then
-                        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
-                    else
-                        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
-                    end
-                else
-                    -- Create ESP if it doesn't exist
-                    CreateESP(player)
-                end
+        -- Connect events for dragging
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                stopDragging()
             end
-        end
+        end)
+
+        -- Update slider while dragging
+        RunService.RenderStepped:Connect(updateSlider)
     end
-end
-
---// Start the ESP refresh coroutine
-coroutine.wrap(RefreshESP)()
-
---// Initial ESP setup for players
-local function SetupPlayer(player)
-    player.CharacterAdded:Connect(function(character)
-        -- Wait for the character to fully load
-        character:WaitForChild("Head")
-        CreateESP(player) -- Create ESP for new player character
-    end)
-
-    if player.Character then
-        CreateESP(player) -- Create ESP for existing character
-    end
-end
-
---// Setup ESP for players already in the game
-for _, player in pairs(Players:GetPlayers()) do
-    SetupPlayer(player)
-end
-
---// Listen for new players
-Players.PlayerAdded:Connect(function(player)
-    SetupPlayer(player) -- Setup ESP for new players
 end)
+
+--// Make sure the GUI is visible when the script runs
+MainFrame.Visible = true
