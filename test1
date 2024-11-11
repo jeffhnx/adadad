@@ -18,8 +18,8 @@ ScreenGui.Parent = game.CoreGui
 
 -- Main Frame
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 300, 0, 200)
-MainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+MainFrame.Size = UDim2.new(0, 300, 0, 250)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -125)
 MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 MainFrame.Visible = false
 MainFrame.Parent = ScreenGui
@@ -63,12 +63,52 @@ SetAimKeyButton.Parent = MainFrame
 -- Smoothing Slider
 local SmoothingLabel = Instance.new("TextLabel")
 SmoothingLabel.Text = "Smoothing: 0"
-SmoothingLabel.Size = UDim2.new(1, -10, 0, 30)
+SmoothingLabel.Size = UDim2.new(1, -10, 0, 20)
 SmoothingLabel.Position = UDim2.new(0, 5, 0, 160)
 SmoothingLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 SmoothingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SmoothingLabel.TextScaled = true
 SmoothingLabel.Parent = MainFrame
+
+-- Slider for Smoothing Adjustment
+local SmoothingSlider = Instance.new("Frame")
+SmoothingSlider.Size = UDim2.new(1, -10, 0, 10)
+SmoothingSlider.Position = UDim2.new(0, 5, 0, 190)
+SmoothingSlider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+SmoothingSlider.Parent = MainFrame
+
+local SliderBar = Instance.new("Frame")
+SliderBar.Size = UDim2.new(0, 10, 1, 0)
+SliderBar.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+SliderBar.Parent = SmoothingSlider
+
+-- Dragging Logic for Smoothing Slider
+local isDragging = false
+SmoothingSlider.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = true
+    end
+end)
+
+SmoothingSlider.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local mouseX = input.Position.X
+        local sliderStart = SmoothingSlider.AbsolutePosition.X
+        local sliderEnd = sliderStart + SmoothingSlider.AbsoluteSize.X
+        local relativePosition = math.clamp(mouseX - sliderStart, 0, SmoothingSlider.AbsoluteSize.X)
+        SliderBar.Size = UDim2.new(0, relativePosition, 1, 0)
+        
+        -- Update AimSmoothing based on slider position (0-10)
+        AimSmoothing = math.floor((relativePosition / SmoothingSlider.AbsoluteSize.X) * 10)
+        SmoothingLabel.Text = "Smoothing: " .. AimSmoothing
+    end
+end)
 
 -- Toggle GUI visibility with Right Shift
 UserInputService.InputBegan:Connect(function(input)
@@ -100,12 +140,6 @@ SetAimKeyButton.MouseButton1Click:Connect(function()
             connection:Disconnect()
         end
     end)
-end)
-
--- Smoothing Adjustment (cycle between 0 and 10)
-SmoothingLabel.MouseButton1Click:Connect(function()
-    AimSmoothing = (AimSmoothing + 1) % 11
-    SmoothingLabel.Text = "Smoothing: " .. AimSmoothing
 end)
 
 -- Aimbot Function
