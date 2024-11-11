@@ -8,129 +8,128 @@ local LocalPlayer = Players.LocalPlayer
 --// Variables
 local AimbotEnabled = false
 local ESPEnabled = false
-local AimbotStrength = 0.1 -- Default sensitivity for how quickly to aim at the target
-local RightControlHeld = false
-local AimKey = Enum.KeyCode.LeftControl -- Default aim key
-local refreshRate = 1 -- seconds
-local GUIVisible = false
+local TeamCheckEnabled = false
+local AimSmoothing = 0 -- Controls aim smoothing
+local AimKey = Enum.UserInputType.MouseButton2 -- Default to right-click
 
---// Create GUI
-local gui = Instance.new("ScreenGui")
-gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-gui.Enabled = false -- Start with the GUI hidden
+--// UI Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
 
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0.3, 0, 0.35, 0)
-frame.Position = UDim2.new(0.7, 0, 0.6, 0)
-frame.BackgroundTransparency = 0.2
-frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+-- Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 300, 0, 200)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MainFrame.Visible = false
+MainFrame.Parent = ScreenGui
 
--- ESP Toggle
-local espToggle = Instance.new("TextButton", frame)
-espToggle.Size = UDim2.new(0.8, 0, 0.2, 0)
-espToggle.Position = UDim2.new(0.1, 0, 0.1, 0)
-espToggle.Text = "ESP: OFF"
-espToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-espToggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+-- Title
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Text = "Aimbot Settings"
+TitleLabel.Size = UDim2.new(1, 0, 0, 30)
+TitleLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Parent = MainFrame
 
-espToggle.MouseButton1Click:Connect(function()
-    ESPEnabled = not ESPEnabled
-    espToggle.Text = "ESP: " .. (ESPEnabled and "ON" or "OFF")
-end)
+-- Toggle Aimbot Button
+local ToggleAimbotButton = Instance.new("TextButton")
+ToggleAimbotButton.Text = "Toggle Aimbot: OFF"
+ToggleAimbotButton.Size = UDim2.new(1, -10, 0, 30)
+ToggleAimbotButton.Position = UDim2.new(0, 5, 0, 40)
+ToggleAimbotButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleAimbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleAimbotButton.Parent = MainFrame
 
--- Aimbot Toggle
-local aimbotToggle = Instance.new("TextButton", frame)
-aimbotToggle.Size = UDim2.new(0.8, 0, 0.2, 0)
-aimbotToggle.Position = UDim2.new(0.1, 0, 0.35, 0)
-aimbotToggle.Text = "Aimbot: OFF"
-aimbotToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-aimbotToggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+-- Toggle Team Check Button
+local ToggleTeamCheckButton = Instance.new("TextButton")
+ToggleTeamCheckButton.Text = "Toggle Team Check: OFF"
+ToggleTeamCheckButton.Size = UDim2.new(1, -10, 0, 30)
+ToggleTeamCheckButton.Position = UDim2.new(0, 5, 0, 80)
+ToggleTeamCheckButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleTeamCheckButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleTeamCheckButton.Parent = MainFrame
 
-aimbotToggle.MouseButton1Click:Connect(function()
-    AimbotEnabled = not AimbotEnabled
-    aimbotToggle.Text = "Aimbot: " .. (AimbotEnabled and "ON" or "OFF")
-end)
+-- Set Aim Key Button
+local SetAimKeyButton = Instance.new("TextButton")
+SetAimKeyButton.Text = "Set Aim Key: Right Click"
+SetAimKeyButton.Size = UDim2.new(1, -10, 0, 30)
+SetAimKeyButton.Position = UDim2.new(0, 5, 0, 120)
+SetAimKeyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+SetAimKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SetAimKeyButton.Parent = MainFrame
 
--- Circular Slider for Sensitivity
-local sliderContainer = Instance.new("Frame", frame)
-sliderContainer.Size = UDim2.new(0.5, 0, 0.5, 0)
-sliderContainer.Position = UDim2.new(0.25, 0, 0.55, 0)
-sliderContainer.BackgroundTransparency = 1
+-- Smoothing Slider
+local SmoothingLabel = Instance.new("TextLabel")
+SmoothingLabel.Text = "Smoothing: 0"
+SmoothingLabel.Size = UDim2.new(1, -10, 0, 30)
+SmoothingLabel.Position = UDim2.new(0, 5, 0, 160)
+SmoothingLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+SmoothingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SmoothingLabel.Parent = MainFrame
 
-local sliderCircle = Instance.new("ImageButton", sliderContainer)
-sliderCircle.Size = UDim2.new(0.5, 0, 0.5, 0)
-sliderCircle.Position = UDim2.new(0.25, 0, 0.25, 0)
-sliderCircle.Image = "rbxassetid://6031097227" -- Set to a circular image asset
-sliderCircle.BackgroundTransparency = 1
-sliderCircle.Rotation = AimbotStrength * 360
-
-sliderCircle.MouseButton1Down:Connect(function()
-    local mouse = LocalPlayer:GetMouse()
-    
-    local function updateSlider()
-        local relativeX = (mouse.X - sliderContainer.AbsolutePosition.X) / sliderContainer.AbsoluteSize.X
-        AimbotStrength = math.clamp(relativeX, 0, 1)
-        sliderCircle.Rotation = AimbotStrength * 360
+-- Toggle GUI visibility with Right Shift
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        MainFrame.Visible = not MainFrame.Visible
     end
+end)
 
-    updateSlider()
-    local dragConnection
-    dragConnection = mouse.Move:Connect(updateSlider)
-    mouse.Button1Up:Connect(function()
-        dragConnection:Disconnect()
+-- Toggle Aimbot Function
+ToggleAimbotButton.MouseButton1Click:Connect(function()
+    AimbotEnabled = not AimbotEnabled
+    ToggleAimbotButton.Text = "Toggle Aimbot: " .. (AimbotEnabled and "ON" or "OFF")
+end)
+
+-- Toggle Team Check Function
+ToggleTeamCheckButton.MouseButton1Click:Connect(function()
+    TeamCheckEnabled = not TeamCheckEnabled
+    ToggleTeamCheckButton.Text = "Toggle Team Check: " .. (TeamCheckEnabled and "ON" or "OFF")
+end)
+
+-- Set Aim Key Function
+SetAimKeyButton.MouseButton1Click:Connect(function()
+    SetAimKeyButton.Text = "Press New Aim Key"
+    local connection
+    connection = UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType ~= Enum.UserInputType.MouseMovement then
+            AimKey = input.UserInputType
+            SetAimKeyButton.Text = "Set Aim Key: " .. tostring(AimKey)
+            connection:Disconnect()
+        end
     end)
 end)
 
---// Toggle GUI with Right Shift Key
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.RightShift then
-        GUIVisible = not GUIVisible
-        gui.Enabled = GUIVisible
-    end
+-- Smoothing Slider Function
+SmoothingLabel.MouseButton1Click:Connect(function()
+    AimSmoothing = (AimSmoothing + 1) % 10 -- Increment and loop around
+    SmoothingLabel.Text = "Smoothing: " .. AimSmoothing
 end)
 
---// Aimbot Function
+-- Aimbot Function
 local function Aimbot()
-    if RightControlHeld and AimbotEnabled then
+    if AimbotEnabled then
         local closestPlayer = nil
         local closestDistance = math.huge
 
         for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                if player.Team ~= LocalPlayer.Team then
-                    local targetPosition = player.Character.Head.Position
-                    local distance = (Camera.CFrame.Position - targetPosition).Magnitude
-
-                    if distance < closestDistance then
-                        closestDistance = distance
-                        closestPlayer = player
-                    end
+            if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character and player.Character:FindFirstChild("Head") then
+                local targetPosition = player.Character.Head.Position
+                local distance = (Camera.CFrame.Position - targetPosition).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestPlayer = player
                 end
             end
         end
 
-        if closestPlayer then
+        if closestPlayer and UserInputService:IsMouseButtonPressed(AimKey) then
             local targetPosition = closestPlayer.Character.Head.Position
-            local newCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
-            Camera.CFrame = Camera.CFrame:Lerp(newCFrame, AimbotStrength)
+            local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
+            Camera.CFrame = Camera.CFrame:Lerp(cameraCFrame, AimSmoothing / 10)
         end
     end
 end
 
---// Input Handling for Aim Key
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == AimKey then
-        RightControlHeld = true
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode == AimKey then
-        RightControlHeld = false
-    end
-end)
-
---// Run Service Loop
-RunService.RenderStepped:Connect(function()
-    Aimbot()
-end)
+-- Run Service Loop
+RunService.RenderStepped:Connect(Aimbot)
