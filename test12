@@ -1,0 +1,199 @@
+--// Services
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+--// GUI Setup
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer.PlayerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Parent = screenGui
+mainFrame.Size = UDim2.new(0, 300, 0, 150)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = true
+
+local sliderLabel = Instance.new("TextLabel")
+sliderLabel.Parent = mainFrame
+sliderLabel.Text = "Aimbot Strength"
+sliderLabel.Size = UDim2.new(0, 280, 0, 20)
+sliderLabel.Position = UDim2.new(0, 10, 0, 10)
+sliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+sliderLabel.BackgroundTransparency = 1
+
+local slider = Instance.new("Frame")
+slider.Parent = mainFrame
+slider.Size = UDim2.new(0, 280, 0, 10)
+slider.Position = UDim2.new(0, 10, 0, 40)
+slider.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+
+local sliderButton = Instance.new("Frame")
+sliderButton.Parent = slider
+sliderButton.Size = UDim2.new(0, 10, 1, 0)
+sliderButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+
+local aimbotStrengthValue = Instance.new("TextLabel")
+aimbotStrengthValue.Parent = mainFrame
+aimbotStrengthValue.Text = "Strength: 0.5"
+aimbotStrengthValue.Size = UDim2.new(0, 280, 0, 20)
+aimbotStrengthValue.Position = UDim2.new(0, 10, 0, 120)
+aimbotStrengthValue.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimbotStrengthValue.BackgroundTransparency = 1
+
+--// Variables
+local AimbotEnabled = true
+local ESPEnabled = true
+local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
+local LeftControlHeld = false
+local refreshRate = 1 -- seconds
+
+--// Slider Functionality
+local isDragging = false
+sliderButton.MouseButton1Down:Connect(function()
+    isDragging = true
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isDragging then
+        local mousePos = input.Position.X - slider.AbsolutePosition.X
+        local clampedPos = math.clamp(mousePos, 0, slider.AbsoluteSize.X - sliderButton.AbsoluteSize.X)
+        sliderButton.Position = UDim2.new(0, clampedPos, 0, 0)
+        AimbotStrength = clampedPos / (slider.AbsoluteSize.X - sliderButton.AbsoluteSize.X)
+        aimbotStrengthValue.Text = "Strength: " .. string.format("%.2f", AimbotStrength)
+    end
+end)
+
+--// ESP Function
+local function CreateESP(player)
+    local highlight = Instance.new("Highlight")
+    highlight.Parent = player.Character
+    highlight.Adornee = player.Character
+
+    -- Set highlight color based on team
+    if player.Team == LocalPlayer.Team then
+        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
+    else
+        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
+    end
+
+    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+    highlight.Enabled = ESPEnabled
+
+    -- Remove highlight when player leaves
+    player.CharacterRemoving:Connect(function()
+        highlight:Destroy()
+    end)
+    
+    return highlight -- Return the highlight instance
+end
+
+--// Aimbot Function
+local function Aimbot()
+    if LeftControlHeld and AimbotEnabled then
+        local closestPlayer = nil
+        local closestDistance = math.huge
+
+        for _, player in pairs(Players:GetPlayers()) do
+            -- Check if the player is not the local player and has a character with a head
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                -- Check for team and only aim at players not on the same team
+                if player.Team ~= LocalPlayer.Team then
+                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at hair level
+                    local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
+
+                    if onScreen then
+                        local mousePosition = UserInputService:GetMouseLocation()
+                        local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            closestPlayer = player
+                        end
+                    end
+                end
+            end
+        end
+
+        if closestPlayer then
+            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at hair level
+            local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
+            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition
+        end
+    end
+end
+
+--// User Input for Left Control Key
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        LeftControlHeld = true -- Left control held to enable aimbot
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        LeftControlHeld = false -- Release left control to disable aimbot
+    end
+end)
+
+--// Run Service Loop
+RunService.RenderStepped:Connect(function()
+    Aimbot()
+end)
+
+--// Setup ESP for all players and refresh highlights every second
+local function RefreshESP()
+    while wait(refreshRate) do
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                local highlight = player.Character:FindFirstChildOfClass("Highlight")
+                if highlight then
+                    -- Update highlight color based on team
+                    if player.Team == LocalPlayer.Team then
+                        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
+                    else
+                        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
+                    end
+                else
+                    -- Create ESP if it doesn't exist
+                    CreateESP(player)
+                end
+            end
+        end
+    end
+end
+
+--// Start the ESP refresh coroutine
+coroutine.wrap(RefreshESP)()
+
+--// Initial ESP setup for players
+local function SetupPlayer(player)
+    player.CharacterAdded:Connect(function(character)
+        -- Wait for the character to fully load
+        character:WaitForChild("Head")
+        CreateESP(player) -- Create ESP for new player character
+    end)
+
+    if player.Character then
+        CreateESP(player) -- Create ESP for existing character
+    end
+end
+
+--// Setup ESP for players already in the game
+for _, player in pairs(Players:GetPlayers()) do
+    SetupPlayer(player)
+end
+
+--// Listen for new players
+Players.PlayerAdded:Connect(function(player)
+    SetupPlayer(player) -- Setup ESP for new players
+end)
