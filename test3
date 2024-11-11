@@ -6,10 +6,10 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
 --// Variables
-local AimbotEnabled = true
-local ESPEnabled = true
+local AimbotEnabled = false
+local ESPEnabled = false
 local AimbotStrength = 0.1 -- Default sensitivity for how quickly to aim at the target
-local LeftControlHeld = false
+local RightControlHeld = false
 local AimKey = Enum.KeyCode.LeftControl -- Default aim key
 local refreshRate = 1 -- seconds
 local GUIVisible = false
@@ -20,64 +20,57 @@ gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 gui.Enabled = false -- Start with the GUI hidden
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0.2, 0, 0.3, 0)
-frame.Position = UDim2.new(0.75, 0, 0.7, 0)
+frame.Size = UDim2.new(0.3, 0, 0.35, 0)
+frame.Position = UDim2.new(0.7, 0, 0.6, 0)
 frame.BackgroundTransparency = 0.2
 frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 
-local aimKeyButton = Instance.new("TextButton", frame)
-aimKeyButton.Size = UDim2.new(0.8, 0, 0.3, 0)
-aimKeyButton.Position = UDim2.new(0.1, 0, 0.1, 0)
-aimKeyButton.Text = "Aim Key: " .. AimKey.Name
-aimKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-aimKeyButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+-- ESP Toggle
+local espToggle = Instance.new("TextButton", frame)
+espToggle.Size = UDim2.new(0.8, 0, 0.2, 0)
+espToggle.Position = UDim2.new(0.1, 0, 0.1, 0)
+espToggle.Text = "ESP: OFF"
+espToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+espToggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 
-local sliderLabel = Instance.new("TextLabel", frame)
-sliderLabel.Text = "Aim Sensitivity"
-sliderLabel.Size = UDim2.new(1, 0, 0.2, 0)
-sliderLabel.Position = UDim2.new(0, 0, 0.5, 0)
-sliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-sliderLabel.BackgroundTransparency = 1
-
-local slider = Instance.new("TextButton", frame)
-slider.Size = UDim2.new(0.8, 0, 0.2, 0)
-slider.Position = UDim2.new(0.1, 0, 0.7, 0)
-slider.Text = "Sensitivity: " .. tostring(AimbotStrength)
-slider.TextColor3 = Color3.fromRGB(255, 255, 255)
-slider.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-
---// Function to toggle GUI visibility
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.LeftShift then
-        GUIVisible = not GUIVisible
-        gui.Enabled = GUIVisible
-    end
+espToggle.MouseButton1Click:Connect(function()
+    ESPEnabled = not ESPEnabled
+    espToggle.Text = "ESP: " .. (ESPEnabled and "ON" or "OFF")
 end)
 
---// Function to change the aim key
-local isSettingKey = false
-aimKeyButton.MouseButton1Click:Connect(function()
-    if not isSettingKey then
-        aimKeyButton.Text = "Press any key..."
-        isSettingKey = true
-        UserInputService.InputBegan:Connect(function(input)
-            if isSettingKey then
-                AimKey = input.KeyCode
-                aimKeyButton.Text = "Aim Key: " .. AimKey.Name
-                isSettingKey = false
-            end
-        end)
-    end
+-- Aimbot Toggle
+local aimbotToggle = Instance.new("TextButton", frame)
+aimbotToggle.Size = UDim2.new(0.8, 0, 0.2, 0)
+aimbotToggle.Position = UDim2.new(0.1, 0, 0.35, 0)
+aimbotToggle.Text = "Aimbot: OFF"
+aimbotToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimbotToggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+
+aimbotToggle.MouseButton1Click:Connect(function()
+    AimbotEnabled = not AimbotEnabled
+    aimbotToggle.Text = "Aimbot: " .. (AimbotEnabled and "ON" or "OFF")
 end)
 
---// Update AimbotStrength based on slider
-slider.MouseButton1Down:Connect(function()
-    local mouse = game.Players.LocalPlayer:GetMouse()
+-- Circular Slider for Sensitivity
+local sliderContainer = Instance.new("Frame", frame)
+sliderContainer.Size = UDim2.new(0.5, 0, 0.5, 0)
+sliderContainer.Position = UDim2.new(0.25, 0, 0.55, 0)
+sliderContainer.BackgroundTransparency = 1
+
+local sliderCircle = Instance.new("ImageButton", sliderContainer)
+sliderCircle.Size = UDim2.new(0.5, 0, 0.5, 0)
+sliderCircle.Position = UDim2.new(0.25, 0, 0.25, 0)
+sliderCircle.Image = "rbxassetid://6031097227" -- Set to a circular image asset
+sliderCircle.BackgroundTransparency = 1
+sliderCircle.Rotation = AimbotStrength * 360
+
+sliderCircle.MouseButton1Down:Connect(function()
+    local mouse = LocalPlayer:GetMouse()
     
     local function updateSlider()
-        local newPosition = math.clamp((mouse.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
-        AimbotStrength = newPosition
-        slider.Text = string.format("Sensitivity: %.2f", AimbotStrength)
+        local relativeX = (mouse.X - sliderContainer.AbsolutePosition.X) / sliderContainer.AbsoluteSize.X
+        AimbotStrength = math.clamp(relativeX, 0, 1)
+        sliderCircle.Rotation = AimbotStrength * 360
     end
 
     updateSlider()
@@ -88,9 +81,17 @@ slider.MouseButton1Down:Connect(function()
     end)
 end)
 
+--// Toggle GUI with Right Shift Key
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        GUIVisible = not GUIVisible
+        gui.Enabled = GUIVisible
+    end
+end)
+
 --// Aimbot Function
 local function Aimbot()
-    if LeftControlHeld and AimbotEnabled then
+    if RightControlHeld and AimbotEnabled then
         local closestPlayer = nil
         local closestDistance = math.huge
 
@@ -119,13 +120,13 @@ end
 --// Input Handling for Aim Key
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == AimKey then
-        LeftControlHeld = true
+        RightControlHeld = true
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
     if input.KeyCode == AimKey then
-        LeftControlHeld = false
+        RightControlHeld = false
     end
 end)
 
