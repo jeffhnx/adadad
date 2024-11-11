@@ -1,124 +1,138 @@
---// Helper Function for Randomized Sleep
-local function RandomSleep(min, max)
-    wait(math.random(min, max))
-end
+--// Services
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
 
---// Obfuscated Function Names
-local RS = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
-local PS = game:GetService("Players")
-local CAM = workspace.CurrentCamera
-local LP = PS.LocalPlayer
-local ESPStatus = true
-local AimbotStatus = true
-local RefreshDelay = math.random(1, 3) -- Random delay for ESP refresh
-local LeftControlHeld = false -- Variable to check if Left Control is held
+--// Variables
+local AimbotEnabled = true
+local ESPEnabled = true
+local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
+local LeftControlHeld = false
+local refreshRate = 1 -- seconds
 
---// Create ESP with obfuscated code
-local function b7v3V1(player)
-    local ESPObj = Instance.new("Highlight")
-    ESPObj.Parent = player.Character
-    ESPObj.Adornee = player.Character
+--// ESP Function
+local function CreateESP(player)
+    local highlight = Instance.new("Highlight")
+    highlight.Parent = player.Character
+    highlight.Adornee = player.Character
 
-    if player.Team == LP.Team then
-        ESPObj.FillColor = Color3.fromRGB(0, 255, 0) -- Teammate color
+    -- Set highlight color based on team
+    if player.Team == LocalPlayer.Team then
+        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
     else
-        ESPObj.FillColor = Color3.fromRGB(255, 0, 0) -- Enemy color
+        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
     end
-    ESPObj.OutlineColor = Color3.fromRGB(0, 0, 0)
-    ESPObj.Enabled = ESPStatus
 
+    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+    highlight.Enabled = ESPEnabled
+
+    -- Remove highlight when player leaves
     player.CharacterRemoving:Connect(function()
-        ESPObj:Destroy()
+        highlight:Destroy()
     end)
-    return ESPObj
+    
+    return highlight -- Return the highlight instance
 end
 
---// Aimbot with obfuscated name and smoother code
-local function a1mbo7()
-    if LeftControlHeld and AimbotStatus then
-        local closestPlayer, minDist = nil, math.huge
-        for _, p in pairs(PS:GetPlayers()) do
-            if p ~= LP and p.Character and p.Character:FindFirstChild("Head") then
-                if p.Team ~= LP.Team then
-                    local targetPos = p.Character.Head.Position + Vector3.new(0, 0.5, 0)
-                    local screenPos, onScreen = CAM:WorldToViewportPoint(targetPos)
+--// Aimbot Function
+local function Aimbot()
+    if LeftControlHeld and AimbotEnabled then
+        local closestPlayer = nil
+        local closestDistance = math.huge
+
+        for _, player in pairs(Players:GetPlayers()) do
+            -- Check if the player is not the local player and has a character with a head
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                -- Check for team and only aim at players not on the same team
+                if player.Team ~= LocalPlayer.Team then
+                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at hair level
+                    local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
+
                     if onScreen then
-                        local mousePos = UIS:GetMouseLocation()
-                        local dist = (Vector2.new(mousePos.X, mousePos.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-                        if dist < minDist then
-                            minDist = dist
-                            closestPlayer = p
+                        local mousePosition = UserInputService:GetMouseLocation()
+                        local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            closestPlayer = player
                         end
                     end
                 end
             end
         end
+
         if closestPlayer then
-            local targetPos = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0)
-            local newCameraCFrame = CFrame.new(CAM.CFrame.Position, targetPos)
-            CAM.CFrame = newCameraCFrame:Lerp(CAM.CFrame, 0.5)
+            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at hair level
+            local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
+            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition
         end
     end
 end
 
---// Obfuscated User Input Logic for Left Control Key
-UIS.InputBegan:Connect(function(input)
+--// User Input for Left Control Key
+UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.LeftControl then
-        LeftControlHeld = true -- Left Control held to enable aimbot
+        LeftControlHeld = true -- Left control held to enable aimbot
     end
 end)
 
-UIS.InputEnded:Connect(function(input)
+UserInputService.InputEnded:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.LeftControl then
         LeftControlHeld = false -- Release left control to disable aimbot
     end
 end)
 
---// Enhanced ESP Refresh with Random Delays
-local function h8e7p1()
-    while true do
-        RandomSleep(1, 3) -- Randomized delay for ESP refresh
-        for _, player in pairs(PS:GetPlayers()) do
+--// Run Service Loop
+RunService.RenderStepped:Connect(function()
+    Aimbot()
+end)
+
+--// Setup ESP for all players and refresh highlights every second
+local function RefreshESP()
+    while wait(refreshRate) do
+        for _, player in pairs(Players:GetPlayers()) do
             if player.Character then
-                local existingESP = player.Character:FindFirstChildOfClass("Highlight")
-                if existingESP then
-                    if player.Team == LP.Team then
-                        existingESP.FillColor = Color3.fromRGB(0, 255, 0)
+                local highlight = player.Character:FindFirstChildOfClass("Highlight")
+                if highlight then
+                    -- Update highlight color based on team
+                    if player.Team == LocalPlayer.Team then
+                        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
                     else
-                        existingESP.FillColor = Color3.fromRGB(255, 0, 0)
+                        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
                     end
                 else
-                    b7v3V1(player)
+                    -- Create ESP if it doesn't exist
+                    CreateESP(player)
                 end
             end
         end
     end
 end
 
---// Start ESP Refresh
-coroutine.wrap(h8e7p1)()
+--// Start the ESP refresh coroutine
+coroutine.wrap(RefreshESP)()
 
---// Initialize ESP for all players
+--// Initial ESP setup for players
 local function SetupPlayer(player)
     player.CharacterAdded:Connect(function(character)
+        -- Wait for the character to fully load
         character:WaitForChild("Head")
-        b7v3V1(player)
+        CreateESP(player) -- Create ESP for new player character
     end)
+
     if player.Character then
-        b7v3V1(player)
+        CreateESP(player) -- Create ESP for existing character
     end
 end
 
-for _, player in pairs(PS:GetPlayers()) do
+--// Setup ESP for players already in the game
+for _, player in pairs(Players:GetPlayers()) do
     SetupPlayer(player)
 end
 
-PS.PlayerAdded:Connect(function(player)
-    SetupPlayer(player)
-end)
-
---// Main Render Loop for Aimbot
-RS.RenderStepped:Connect(function()
-    a1mbo7()
+--// Listen for new players
+Players.PlayerAdded:Connect(function(player)
+    SetupPlayer(player) -- Setup ESP for new players
 end)
