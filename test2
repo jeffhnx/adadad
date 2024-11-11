@@ -4,29 +4,30 @@ local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
-
---// Variables
-local AimbotEnabled = false
 local ESPEnabled = false
 local TeamCheckEnabled = false
+local AimbotEnabled = false
 local AimSmoothing = 0 -- Controls aim smoothing
 local AimKey = Enum.UserInputType.MouseButton2 -- Default to right-click
 
---// UI Setup
+--// Variables for ESP
+local espObjects = {}
+
+--// GUI Setup
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
 
 -- Main Frame
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 300, 0, 250)
-MainFrame.Position = UDim2.new(0.5, -150, 0.5, -125)
+MainFrame.Size = UDim2.new(0, 300, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -150)
 MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 MainFrame.Visible = false
 MainFrame.Parent = ScreenGui
 
 -- Title
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Text = "Aimbot Settings"
+TitleLabel.Text = "Aimbot and ESP Settings"
 TitleLabel.Size = UDim2.new(1, 0, 0, 30)
 TitleLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -42,11 +43,20 @@ ToggleAimbotButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 ToggleAimbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleAimbotButton.Parent = MainFrame
 
+-- Toggle ESP Button
+local ToggleESPButton = Instance.new("TextButton")
+ToggleESPButton.Text = "Toggle ESP: OFF"
+ToggleESPButton.Size = UDim2.new(1, -10, 0, 30)
+ToggleESPButton.Position = UDim2.new(0, 5, 0, 80)
+ToggleESPButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleESPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleESPButton.Parent = MainFrame
+
 -- Toggle Team Check Button
 local ToggleTeamCheckButton = Instance.new("TextButton")
 ToggleTeamCheckButton.Text = "Toggle Team Check: OFF"
 ToggleTeamCheckButton.Size = UDim2.new(1, -10, 0, 30)
-ToggleTeamCheckButton.Position = UDim2.new(0, 5, 0, 80)
+ToggleTeamCheckButton.Position = UDim2.new(0, 5, 0, 120)
 ToggleTeamCheckButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 ToggleTeamCheckButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleTeamCheckButton.Parent = MainFrame
@@ -55,7 +65,7 @@ ToggleTeamCheckButton.Parent = MainFrame
 local SetAimKeyButton = Instance.new("TextButton")
 SetAimKeyButton.Text = "Set Aim Key: Right Click"
 SetAimKeyButton.Size = UDim2.new(1, -10, 0, 30)
-SetAimKeyButton.Position = UDim2.new(0, 5, 0, 120)
+SetAimKeyButton.Position = UDim2.new(0, 5, 0, 160)
 SetAimKeyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 SetAimKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 SetAimKeyButton.Parent = MainFrame
@@ -64,7 +74,7 @@ SetAimKeyButton.Parent = MainFrame
 local SmoothingLabel = Instance.new("TextLabel")
 SmoothingLabel.Text = "Smoothing: 0"
 SmoothingLabel.Size = UDim2.new(1, -10, 0, 20)
-SmoothingLabel.Position = UDim2.new(0, 5, 0, 160)
+SmoothingLabel.Position = UDim2.new(0, 5, 0, 190)
 SmoothingLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 SmoothingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SmoothingLabel.TextScaled = true
@@ -73,7 +83,7 @@ SmoothingLabel.Parent = MainFrame
 -- Slider for Smoothing Adjustment
 local SmoothingSlider = Instance.new("Frame")
 SmoothingSlider.Size = UDim2.new(1, -10, 0, 10)
-SmoothingSlider.Position = UDim2.new(0, 5, 0, 190)
+SmoothingSlider.Position = UDim2.new(0, 5, 0, 220)
 SmoothingSlider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 SmoothingSlider.Parent = MainFrame
 
@@ -123,6 +133,12 @@ ToggleAimbotButton.MouseButton1Click:Connect(function()
     ToggleAimbotButton.Text = "Toggle Aimbot: " .. (AimbotEnabled and "ON" or "OFF")
 end)
 
+-- Toggle ESP Function
+ToggleESPButton.MouseButton1Click:Connect(function()
+    ESPEnabled = not ESPEnabled
+    ToggleESPButton.Text = "Toggle ESP: " .. (ESPEnabled and "ON" or "OFF")
+end)
+
 -- Toggle Team Check Function
 ToggleTeamCheckButton.MouseButton1Click:Connect(function()
     TeamCheckEnabled = not TeamCheckEnabled
@@ -148,6 +164,7 @@ local function Aimbot()
         local closestPlayer = nil
         local closestDistance = math.huge
 
+        -- Find the closest player
         for _, player in pairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and (not TeamCheckEnabled or player.Team ~= LocalPlayer.Team) and player.Character and player.Character:FindFirstChild("Head") then
                 local targetPosition = player.Character.Head.Position
@@ -159,13 +176,57 @@ local function Aimbot()
             end
         end
 
+        -- If a target is found and the aim key is pressed
         if closestPlayer and UserInputService:IsMouseButtonPressed(AimKey) then
-            local targetPosition = closestPlayer.Character.Head.Position
-            local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
-            Camera.CFrame = Camera.CFrame:Lerp(cameraCFrame, AimSmoothing / 10)
+            -- Targeting the player's head position
+            local targetHeadPosition = closestPlayer.Character.Head.Position
+
+            -- Calculate the direction to the target's head
+            local targetDirection = (targetHeadPosition - Camera.CFrame.Position).unit
+
+            -- Smoothly move the camera towards the target head
+            local targetCFrame = CFrame.new(Camera.CFrame.Position, targetHeadPosition)
+            local smoothFactor = AimSmoothing / 10
+            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, smoothFactor)
         end
     end
 end
 
--- Run Service Loop
-RunService.RenderStepped:Connect(Aimbot)
+-- ESP Function
+local function ESP()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            -- Create ESP Box
+            if not espObjects[player] then
+                local espBox = Instance.new("BillboardGui")
+                espBox.Adornee = player.Character.Head
+                espBox.Size = UDim2.new(0, 50, 0, 50)
+                espBox.StudsOffset = Vector3.new(0, 1, 0)
+                espBox.AlwaysOnTop = true
+                espBox.Parent = player.Character.Head
+
+                local espLabel = Instance.new("TextLabel")
+                espLabel.Size = UDim2.new(1, 0, 1, 0)
+                espLabel.BackgroundTransparency = 1
+                espLabel.Text = player.Name
+                espLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                espLabel.TextStrokeTransparency = 0.8
+                espLabel.TextScaled = true
+                espLabel.Parent = espBox
+
+                espObjects[player] = espBox
+            end
+        elseif espObjects[player] then
+            espObjects[player]:Destroy()
+            espObjects[player] = nil
+        end
+    end
+end
+
+-- Update functions every frame
+RunService.RenderStepped:Connect(function()
+    if ESPEnabled then
+        ESP()
+    end
+    Aimbot()
+end)
