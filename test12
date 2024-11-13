@@ -6,12 +6,9 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
 --// Variables
-local AimbotEnabled = false
-local ESPEnabled = true
-local AimbotStrength = 0.5 -- Sensitivity for aiming
-local selectedAimKey = Enum.KeyCode.LeftControl -- Default aim key
-local isGUIVisible = true
-local waitingForKeyPress = false
+local AimbotEnabled = true -- Aimbot is enabled by default
+local ESPEnabled = true -- ESP enabled by default
+local AimbotStrength = 0.5 -- Aimbot aiming sensitivity
 local refreshRate = 1 -- ESP refresh rate in seconds
 local closestPlayer = nil
 
@@ -26,8 +23,7 @@ mainFrame.Visible = true
 -- Show/Hide GUI with RightShift key
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.RightShift then
-        isGUIVisible = not isGUIVisible
-        mainFrame.Visible = isGUIVisible
+        mainFrame.Visible = not mainFrame.Visible
     end
 end)
 
@@ -88,29 +84,9 @@ createSlider("Smoothness", UDim2.new(0, 10, 0, 70), AimbotStrength, 0, 1, functi
     AimbotStrength = value
 end)
 
--- Aim Key Selection Button
-local setKeyButton = Instance.new("TextButton", mainFrame)
-setKeyButton.Size = UDim2.new(0, 280, 0, 50)
-setKeyButton.Position = UDim2.new(0, 10, 0, 130)
-setKeyButton.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
-setKeyButton.Text = "Set Aimbot Key: " .. tostring(selectedAimKey)
-
-setKeyButton.MouseButton1Click:Connect(function()
-    waitingForKeyPress = true
-    setKeyButton.Text = "Press any key..."
-end)
-
-UserInputService.InputBegan:Connect(function(input)
-    if waitingForKeyPress then
-        selectedAimKey = input.KeyCode
-        setKeyButton.Text = "Set Aimbot Key: " .. tostring(selectedAimKey)
-        waitingForKeyPress = false
-    end
-end)
-
 -- Aimbot Function
 local function Aimbot()
-    if AimbotEnabled and UserInputService:IsKeyDown(selectedAimKey) then
+    if AimbotEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then -- Right Mouse Button
         local closestDistance = math.huge
         closestPlayer = nil
 
