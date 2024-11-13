@@ -3,21 +3,10 @@ local isAimbotEnabled = false
 local isESPEnabled = false
 local fovValue = 2.5
 local smoothnessValue = 1.44
-local friendlyFireEnabled = false
-local visibleOnly = true
-local scopedOnly = false
-local aimlock = false
-local silentAim = false
-local autoShot = false
-local autoScope = false
-local ignoreFlash = false
-local ignoreSmoke = false
-local killshotEnabled = false
-local betweenShots = false
-
-local isGUIVisible = true
 local aimbotKey = Enum.UserInputType.MouseButton1  -- Default aimbot key (Left Mouse Button)
 local waitingForKeyPress = false
+
+local isGUIVisible = true
 
 -- Create GUI Elements
 local ScreenGui = Instance.new("ScreenGui")
@@ -96,17 +85,6 @@ end
 -- Create Buttons and Sliders
 createToggleButton("Aimbot Enabled", UDim2.new(0, 10, 0, 10), isAimbotEnabled, function(state) isAimbotEnabled = state end)
 createToggleButton("ESP Enabled", UDim2.new(0, 10, 0, 50), isESPEnabled, function(state) isESPEnabled = state end)
-createToggleButton("Friendly Fire", UDim2.new(0, 10, 0, 90), friendlyFireEnabled, function(state) friendlyFireEnabled = state end)
-createToggleButton("Visible Only", UDim2.new(0, 10, 0, 130), visibleOnly, function(state) visibleOnly = state end)
-createToggleButton("Scoped Only", UDim2.new(0, 10, 0, 170), scopedOnly, function(state) scopedOnly = state end)
-createToggleButton("Aimlock", UDim2.new(0, 10, 0, 210), aimlock, function(state) aimlock = state end)
-createToggleButton("Silent Aim", UDim2.new(0, 10, 0, 250), silentAim, function(state) silentAim = state end)
-createToggleButton("Auto Shot", UDim2.new(0, 10, 0, 290), autoShot, function(state) autoShot = state end)
-createToggleButton("Auto Scope", UDim2.new(0, 10, 0, 330), autoScope, function(state) autoScope = state end)
-createToggleButton("Ignore Flash", UDim2.new(0, 10, 0, 370), ignoreFlash, function(state) ignoreFlash = state end)
-createToggleButton("Ignore Smoke", UDim2.new(0, 10, 0, 410), ignoreSmoke, function(state) ignoreSmoke = state end)
-createToggleButton("Killshot", UDim2.new(0, 10, 0, 450), killshotEnabled, function(state) killshotEnabled = state end)
-createToggleButton("Between Shots", UDim2.new(0, 10, 0, 490), betweenShots, function(state) betweenShots = state end)
 
 createSlider("FOV", UDim2.new(0, 220, 0, 10), fovValue, 0, 10, function(value) fovValue = value end)
 createSlider("Smoothness", UDim2.new(0, 220, 0, 50), smoothnessValue, 0, 10, function(value) smoothnessValue = value end)
@@ -139,15 +117,6 @@ end)
 -- Implement Aimbot Logic
 local function aimAt(target)
     if isAimbotEnabled and target then
-        if not friendlyFireEnabled and target.Team == game.Players.LocalPlayer.Team then
-            return
-        end
-        if visibleOnly and not target:FindFirstChild("Visible") then
-            return
-        end
-        if scopedOnly and not game.Players.LocalPlayer.Character:FindFirstChild("Scoped") then
-            return
-        end
         local targetPos = target.Character.Head.Position
         local aimDirection = (targetPos - game.Workspace.CurrentCamera.CFrame.Position).Unit
         game.Workspace.CurrentCamera.CFrame = game.Workspace.CurrentCamera.CFrame:Lerp(CFrame.new(game.Workspace.CurrentCamera.CFrame.Position, game.Workspace.CurrentCamera.CFrame.Position + aimDirection), smoothnessValue / 10)
