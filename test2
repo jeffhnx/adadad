@@ -10,6 +10,10 @@ local aimlock = false
 local silentAim = false
 local autoShot = false
 local autoScope = false
+local ignoreFlash = false
+local ignoreSmoke = false
+local killshotEnabled = false
+local betweenShots = false
 
 -- Create GUI Elements
 local ScreenGui = Instance.new("ScreenGui")
@@ -94,21 +98,36 @@ createToggleButton("Aimlock", UDim2.new(0, 10, 0, 210), aimlock, function(state)
 createToggleButton("Silent Aim", UDim2.new(0, 10, 0, 250), silentAim, function(state) silentAim = state end)
 createToggleButton("Auto Shot", UDim2.new(0, 10, 0, 290), autoShot, function(state) autoShot = state end)
 createToggleButton("Auto Scope", UDim2.new(0, 10, 0, 330), autoScope, function(state) autoScope = state end)
+createToggleButton("Ignore Flash", UDim2.new(0, 10, 0, 370), ignoreFlash, function(state) ignoreFlash = state end)
+createToggleButton("Ignore Smoke", UDim2.new(0, 10, 0, 410), ignoreSmoke, function(state) ignoreSmoke = state end)
+createToggleButton("Killshot", UDim2.new(0, 10, 0, 450), killshotEnabled, function(state) killshotEnabled = state end)
+createToggleButton("Between Shots", UDim2.new(0, 10, 0, 490), betweenShots, function(state) betweenShots = state end)
 
 createSlider("FOV", UDim2.new(0, 220, 0, 10), fovValue, 0, 10, function(value) fovValue = value end)
 createSlider("Smoothness", UDim2.new(0, 220, 0, 50), smoothnessValue, 0, 10, function(value) smoothnessValue = value end)
 
--- Aimbot Functionality Placeholder
+-- Implement Aimbot Logic
 local function aimAt(target)
     if isAimbotEnabled and target then
+        -- Skip teammates if Friendly Fire is OFF
         if not friendlyFireEnabled and target.Team == game.Players.LocalPlayer.Team then
-            return -- Skip aiming at teammates if Friendly Fire is OFF
+            return
         end
-        -- Add further aimbot logic using aimlock, silent aim, etc.
+        -- Add logic for Visible Only, Scoped Only, etc.
+        if visibleOnly and not target:FindFirstChild("Visible") then
+            return
+        end
+        if scopedOnly and not game.Players.LocalPlayer.Character:FindFirstChild("Scoped") then
+            return
+        end
+        -- Aim and lock on target based on Aimlock and Smoothness settings
+        local targetPos = target.Character.Head.Position
+        local aimDirection = (targetPos - game.Workspace.CurrentCamera.CFrame.Position).Unit
+        game.Workspace.CurrentCamera.CFrame = game.Workspace.CurrentCamera.CFrame:Lerp(CFrame.new(game.Workspace.CurrentCamera.CFrame.Position, game.Workspace.CurrentCamera.CFrame.Position + aimDirection), smoothnessValue / 10)
     end
 end
 
--- ESP Functionality Placeholder
+-- Implement ESP Logic
 local function updateESP()
     if isESPEnabled then
         -- Implement ESP logic to highlight players
@@ -118,7 +137,7 @@ end
 -- Run Aimbot and ESP Updates
 game:GetService("RunService").RenderStepped:Connect(function()
     if isAimbotEnabled then
-        -- Run aimbot target acquisition and aiming logic
+        -- Acquire targets and aim
     end
     if isESPEnabled then
         updateESP()
