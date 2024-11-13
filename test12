@@ -1,0 +1,170 @@
+--// Services
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+--// Variables
+local isAimbotEnabled = false
+local isESPEnabled = false
+local selectedAimKey = Enum.UserInputType.MouseButton1 -- Default aim key
+local AimbotStrength = 0.5
+local closestPlayer = nil
+local isGUIVisible = true
+local waitingForKeyPress = false
+
+--// GUI Creation
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+local mainFrame = Instance.new("Frame", ScreenGui)
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.Visible = true
+
+-- Show/Hide GUI with RightShift key
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        isGUIVisible = not isGUIVisible
+        mainFrame.Visible = isGUIVisible
+    end
+end)
+
+-- Create Toggle Button Function
+local function createToggleButton(text, position, initialState, callback)
+    local button = Instance.new("TextButton", mainFrame)
+    button.Size = UDim2.new(0, 280, 0, 50)
+    button.Position = position
+    button.BackgroundColor3 = initialState and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    button.Text = text
+
+    button.MouseButton1Click:Connect(function()
+        initialState = not initialState
+        button.BackgroundColor3 = initialState and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        callback(initialState)
+    end)
+end
+
+-- Create Slider Function
+local function createSlider(text, position, initialValue, minValue, maxValue, callback)
+    local sliderLabel = Instance.new("TextLabel", mainFrame)
+    sliderLabel.Position = position
+    sliderLabel.Size = UDim2.new(0, 280, 0, 30)
+    sliderLabel.Text = text .. ": " .. tostring(initialValue)
+    sliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    sliderLabel.BackgroundTransparency = 1
+
+    local slider = Instance.new("TextButton", mainFrame)
+    slider.Position = UDim2.new(position.X.Scale, position.X.Offset, position.Y.Scale, position.Y.Offset + 30)
+    slider.Size = UDim2.new(0, 280, 0, 20)
+    slider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    
+    slider.MouseButton1Down:Connect(function()
+        local inputConnection
+        inputConnection = RunService.RenderStepped:Connect(function()
+            local mousePos = UserInputService:GetMouseLocation().X
+            local sliderPos = math.clamp((mousePos - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+            local value = minValue + ((maxValue - minValue) * sliderPos)
+            sliderLabel.Text = text .. ": " .. tostring(math.floor(value * 10) / 10)
+            callback(value)
+        end)
+        
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                inputConnection:Disconnect()
+            end
+        end)
+    end)
+end
+
+-- Aimbot Toggle
+createToggleButton("Aimbot Enabled", UDim2.new(0, 10, 0, 10), isAimbotEnabled, function(state) 
+    isAimbotEnabled = state 
+end)
+
+-- ESP Toggle
+createToggleButton("ESP Enabled", UDim2.new(0, 10, 0, 70), isESPEnabled, function(state) 
+    isESPEnabled = state
+end)
+
+-- Slider for Aimbot Smoothness Control
+createSlider("Smoothness", UDim2.new(0, 10, 0, 130), AimbotStrength, 0, 1, function(value) 
+    AimbotStrength = value 
+end)
+
+-- Aim Key Selection Button
+local setKeyButton = Instance.new("TextButton", mainFrame)
+setKeyButton.Size = UDim2.new(0, 280, 0, 50)
+setKeyButton.Position = UDim2.new(0, 10, 0, 190)
+setKeyButton.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+setKeyButton.Text = "Set Aimbot Key"
+
+setKeyButton.MouseButton1Click:Connect(function()
+    waitingForKeyPress = true
+    setKeyButton.Text = "Press any key..."
+end)
+
+UserInputService.InputBegan:Connect(function(input)
+    if waitingForKeyPress then
+        selectedAimKey = input.UserInputType or input.KeyCode
+        setKeyButton.Text = "Set Aimbot Key: " .. tostring(selectedAimKey)
+        waitingForKeyPress = false
+    end
+end)
+
+-- Aimbot Functionality
+local function Aimbot()
+    if isAimbotEnabled and closestPlayer and selectedAimKey then
+        if UserInputService:IsMouseButtonPressed(selectedAimKey) or UserInputService:IsKeyDown(selectedAimKey) then
+            if closestPlayer.Character and closestPlayer.Character:FindFirstChild("Head") then
+                local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0)
+                local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
+                Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength)
+            end
+        end
+    end
+end
+
+-- ESP Functionality (Toggle)
+local function ToggleESP()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            local highlight = player.Character:FindFirstChildOfClass("Highlight")
+            if highlight then
+                highlight.Enabled = isESPEnabled
+            end
+        end
+    end
+end
+
+-- Update Closest Player for Aimbot
+local function findClosestPlayer()
+    local closestDistance = math.huge
+    closestPlayer = nil
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character and player.Character:FindFirstChild("Head") then
+            local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0)
+            local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
+
+            if onScreen then
+                local mousePosition = UserInputService:GetMouseLocation()
+                local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestPlayer = player
+                end
+            end
+        end
+    end
+end
+
+-- Run Aimbot and ESP Toggles
+RunService.RenderStepped:Connect(function()
+    if isESPEnabled then ToggleESP() end
+    if isAimbotEnabled then
+        findClosestPlayer()
+        Aimbot()
+    end
+end)
