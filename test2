@@ -8,10 +8,9 @@ local LocalPlayer = Players.LocalPlayer
 --// Variables
 local AimbotEnabled = true
 local ESPEnabled = true
-local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
-local aimKey = Enum.KeyCode.LeftControl -- Default aimbot key
-local LeftControlHeld = false
-local refreshRate = 1 -- seconds
+local AimbotStrength = 0.5
+local aimKey = Enum.KeyCode.LeftControl
+local refreshRate = 1 -- refresh rate in seconds
 
 -- GUI Variables
 local fovValue = 2.5
@@ -91,7 +90,7 @@ local function createSlider(text, pos, defaultValue, minValue, maxValue, callbac
     end)
 end
 
--- Create Buttons and Sliders
+-- Create GUI Toggles and Sliders
 createToggleButton("Aimbot Enabled", UDim2.new(0, 10, 0, 10), AimbotEnabled, function(state) AimbotEnabled = state end)
 createToggleButton("ESP Enabled", UDim2.new(0, 10, 0, 50), ESPEnabled, function(state) ESPEnabled = state end)
 
@@ -99,23 +98,25 @@ createSlider("Aimbot Strength", UDim2.new(0, 220, 0, 10), AimbotStrength, 0, 1, 
 createSlider("FOV", UDim2.new(0, 220, 0, 50), fovValue, 0, 10, function(value) fovValue = value end)
 createSlider("Smoothness", UDim2.new(0, 220, 0, 90), smoothnessValue, 0, 10, function(value) smoothnessValue = value end)
 
--- Create Aim Key Selector
-local aimKeyLabel = Instance.new("TextLabel")
+-- Aim Key Selector
+local aimKeyLabel = Instance.new("TextButton")
 aimKeyLabel.Size = UDim2.new(0, 200, 0, 30)
 aimKeyLabel.Position = UDim2.new(0, 10, 0, 150)
-aimKeyLabel.Text = "Aimbot Key: LeftControl"
+aimKeyLabel.Text = "Aimbot Key: " .. tostring(aimKey.Name)
 aimKeyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 aimKeyLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 aimKeyLabel.Parent = mainFrame
 
 aimKeyLabel.MouseButton1Click:Connect(function()
-    if aimKey == Enum.KeyCode.LeftControl then
-        aimKey = Enum.KeyCode.Space -- Change to Space for demonstration
-        aimKeyLabel.Text = "Aimbot Key: Space"
-    else
-        aimKey = Enum.KeyCode.LeftControl -- Change back to LeftControl
-        aimKeyLabel.Text = "Aimbot Key: LeftControl"
-    end
+    aimKeyLabel.Text = "Press a key for Aimbot"
+    local connection
+    connection = UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            aimKey = input.KeyCode
+            aimKeyLabel.Text = "Aimbot Key: " .. tostring(aimKey.Name)
+            connection:Disconnect()
+        end
+    end)
 end)
 
 --// ESP Function
@@ -124,7 +125,6 @@ local function CreateESP(player)
     highlight.Parent = player.Character
     highlight.Adornee = player.Character
 
-    -- Set highlight color based on team
     if player.Team == LocalPlayer.Team then
         highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
     else
@@ -134,26 +134,23 @@ local function CreateESP(player)
     highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
     highlight.Enabled = ESPEnabled
 
-    -- Remove highlight when player leaves
     player.CharacterRemoving:Connect(function()
         highlight:Destroy()
     end)
-    
-    return highlight -- Return the highlight instance
+
+    return highlight
 end
 
 --// Aimbot Function
 local function Aimbot()
-    if AimbotEnabled and LeftControlHeld then
-        local closestPlayer = nil
+    if AimbotEnabled and UserInputService:IsKeyDown(aimKey) then
+        local closestPlayer
         local closestDistance = math.huge
 
         for _, player in pairs(Players:GetPlayers()) do
-            -- Check if the player is not the local player and has a character with a head
             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                -- Check for team and only aim at players not on the same team
                 if player.Team ~= LocalPlayer.Team then
-                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at hair level
+                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0)
                     local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
 
                     if onScreen then
@@ -170,75 +167,51 @@ local function Aimbot()
         end
 
         if closestPlayer then
-            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at hair level
-            local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
-            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition
+            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0)
+            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPosition), AimbotStrength)
         end
     end
 end
-
---// User Input for Aimbot Key
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == aimKey then
-        LeftControlHeld = true -- Aimbot is activated
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode == aimKey then
-        LeftControlHeld = false -- Aimbot is deactivated
-    end
-end)
 
 --// Run Service Loop
 RunService.RenderStepped:Connect(function()
     Aimbot()
 end)
 
---// Setup ESP for all players and refresh highlights every second
+-- ESP Loop
 local function RefreshESP()
     while wait(refreshRate) do
         for _, player in pairs(Players:GetPlayers()) do
             if player.Character then
                 local highlight = player.Character:FindFirstChildOfClass("Highlight")
                 if highlight then
-                    -- Update highlight color based on team
-                    if player.Team == LocalPlayer.Team then
-                        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
-                    else
-                        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
-                    end
+                    highlight.Enabled = ESPEnabled
                 else
-                    -- Create ESP if it doesn't exist
-                    CreateESP(player)
+                    if ESPEnabled then
+                        CreateESP(player)
+                    end
                 end
             end
         end
     end
 end
 
---// Start the ESP refresh coroutine
+-- Start the ESP refresh coroutine
 coroutine.wrap(RefreshESP)()
 
---// Initial ESP setup for players
-local function SetupPlayer(player)
-    player.CharacterAdded:Connect(function(character)
-        -- Wait for the character to fully load
-        character:WaitForChild("Head")
-        CreateESP(player) -- Create ESP for new player character
+-- Setup ESP for players already in the game
+for _, player in pairs(Players:GetPlayers()) do
+    player.CharacterAdded:Connect(function()
+        if ESPEnabled then CreateESP(player) end
     end)
-
     if player.Character then
-        CreateESP(player) -- Create ESP for existing character
+        CreateESP(player)
     end
 end
 
---// Setup ESP for players already in the game
-for _, player in pairs(Players:GetPlayers()) do
-    SetupPlayer(player)
-end
-
---// Listen for new players
+-- Listen for new players
 Players.PlayerAdded:Connect(function(player)
-    SetupPlayer(player) -- Setup ESP for new players
+    player.CharacterAdded:Connect(function()
+        if ESPEnabled then CreateESP(player) end
+    end)
 end)
