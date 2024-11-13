@@ -15,6 +15,10 @@ local ignoreSmoke = false
 local killshotEnabled = false
 local betweenShots = false
 
+local isGUIVisible = true
+local aimbotKey = Enum.UserInputType.MouseButton1  -- Default aimbot key (Left Mouse Button)
+local waitingForKeyPress = false
+
 -- Create GUI Elements
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
@@ -24,6 +28,7 @@ local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 400, 0, 400)
 mainFrame.Position = UDim2.new(0.5, -200, 0.5, -200)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.Visible = isGUIVisible
 mainFrame.Parent = ScreenGui
 
 -- Helper Function to Create Toggles and Sliders
@@ -106,40 +111,57 @@ createToggleButton("Between Shots", UDim2.new(0, 10, 0, 490), betweenShots, func
 createSlider("FOV", UDim2.new(0, 220, 0, 10), fovValue, 0, 10, function(value) fovValue = value end)
 createSlider("Smoothness", UDim2.new(0, 220, 0, 50), smoothnessValue, 0, 10, function(value) smoothnessValue = value end)
 
+-- Button to Set Custom Aimbot Key
+local setKeyButton = Instance.new("TextButton")
+setKeyButton.Size = UDim2.new(0, 200, 0, 30)
+setKeyButton.Position = UDim2.new(0, 220, 0, 90)
+setKeyButton.Text = "Set Aimbot Key: " .. tostring(aimbotKey)
+setKeyButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+setKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+setKeyButton.Parent = mainFrame
+
+setKeyButton.MouseButton1Click:Connect(function()
+    waitingForKeyPress = true
+    setKeyButton.Text = "Press any key..."
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        isGUIVisible = not isGUIVisible
+        mainFrame.Visible = isGUIVisible
+    elseif waitingForKeyPress then
+        aimbotKey = input.KeyCode
+        setKeyButton.Text = "Set Aimbot Key: " .. tostring(aimbotKey)
+        waitingForKeyPress = false
+    end
+end)
+
 -- Implement Aimbot Logic
 local function aimAt(target)
     if isAimbotEnabled and target then
-        -- Skip teammates if Friendly Fire is OFF
         if not friendlyFireEnabled and target.Team == game.Players.LocalPlayer.Team then
             return
         end
-        -- Add logic for Visible Only, Scoped Only, etc.
         if visibleOnly and not target:FindFirstChild("Visible") then
             return
         end
         if scopedOnly and not game.Players.LocalPlayer.Character:FindFirstChild("Scoped") then
             return
         end
-        -- Aim and lock on target based on Aimlock and Smoothness settings
         local targetPos = target.Character.Head.Position
         local aimDirection = (targetPos - game.Workspace.CurrentCamera.CFrame.Position).Unit
         game.Workspace.CurrentCamera.CFrame = game.Workspace.CurrentCamera.CFrame:Lerp(CFrame.new(game.Workspace.CurrentCamera.CFrame.Position, game.Workspace.CurrentCamera.CFrame.Position + aimDirection), smoothnessValue / 10)
     end
 end
 
--- Implement ESP Logic
-local function updateESP()
-    if isESPEnabled then
-        -- Implement ESP logic to highlight players
-    end
-end
-
 -- Run Aimbot and ESP Updates
 game:GetService("RunService").RenderStepped:Connect(function()
     if isAimbotEnabled then
-        -- Acquire targets and aim
+        -- Find the nearest target based on FOV and smoothness
+        -- Placeholder for actual aimbot logic to find target
     end
+
     if isESPEnabled then
-        updateESP()
+        -- Placeholder for ESP logic to display player outlines
     end
 end)
