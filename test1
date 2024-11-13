@@ -1,0 +1,126 @@
+-- Initialize Variables
+local isAimbotEnabled = false
+local isESPEnabled = false
+local fovValue = 2.5
+local smoothnessValue = 1.44
+local friendlyFireEnabled = false
+local visibleOnly = true
+local scopedOnly = false
+local aimlock = false
+local silentAim = false
+local autoShot = false
+local autoScope = false
+
+-- Create GUI Elements
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 400, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.Parent = ScreenGui
+
+-- Helper Function to Create Toggles and Sliders
+local function createToggleButton(text, pos, defaultState, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 200, 0, 30)
+    button.Position = pos
+    button.Text = text .. ": " .. (defaultState and "ON" or "OFF")
+    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Parent = mainFrame
+
+    button.MouseButton1Click:Connect(function()
+        defaultState = not defaultState
+        button.Text = text .. ": " .. (defaultState and "ON" or "OFF")
+        callback(defaultState)
+    end)
+end
+
+local function createSlider(text, pos, defaultValue, minValue, maxValue, callback)
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Size = UDim2.new(0, 200, 0, 30)
+    sliderFrame.Position = pos
+    sliderFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    sliderFrame.Parent = mainFrame
+
+    local sliderBar = Instance.new("Frame")
+    sliderBar.Size = UDim2.new((defaultValue - minValue) / (maxValue - minValue), 0, 1, 0)
+    sliderBar.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+    sliderBar.Parent = sliderFrame
+
+    local sliderLabel = Instance.new("TextLabel")
+    sliderLabel.Size = UDim2.new(0, 100, 0, 30)
+    sliderLabel.Position = UDim2.new(1, 10, 0, 0)
+    sliderLabel.Text = text .. ": " .. tostring(defaultValue)
+    sliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    sliderLabel.Parent = sliderFrame
+
+    sliderFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local mouseMoveConnection
+            local mouseUpConnection
+
+            mouseMoveConnection = game:GetService("UserInputService").InputChanged:Connect(function(moveInput)
+                if moveInput.UserInputType == Enum.UserInputType.MouseMovement then
+                    local relativeX = math.clamp(moveInput.Position.X - sliderFrame.AbsolutePosition.X, 0, sliderFrame.AbsoluteSize.X)
+                    local percent = relativeX / sliderFrame.AbsoluteSize.X
+                    local value = math.floor((minValue + percent * (maxValue - minValue)) * 100) / 100
+                    sliderBar.Size = UDim2.new(percent, 0, 1, 0)
+                    sliderLabel.Text = text .. ": " .. tostring(value)
+                    callback(value)
+                end
+            end)
+
+            mouseUpConnection = game:GetService("UserInputService").InputEnded:Connect(function(endInput)
+                if endInput.UserInputType == Enum.UserInputType.MouseButton1 then
+                    mouseMoveConnection:Disconnect()
+                    mouseUpConnection:Disconnect()
+                end
+            end)
+        end
+    end)
+end
+
+-- Create Buttons and Sliders
+createToggleButton("Aimbot Enabled", UDim2.new(0, 10, 0, 10), isAimbotEnabled, function(state) isAimbotEnabled = state end)
+createToggleButton("ESP Enabled", UDim2.new(0, 10, 0, 50), isESPEnabled, function(state) isESPEnabled = state end)
+createToggleButton("Friendly Fire", UDim2.new(0, 10, 0, 90), friendlyFireEnabled, function(state) friendlyFireEnabled = state end)
+createToggleButton("Visible Only", UDim2.new(0, 10, 0, 130), visibleOnly, function(state) visibleOnly = state end)
+createToggleButton("Scoped Only", UDim2.new(0, 10, 0, 170), scopedOnly, function(state) scopedOnly = state end)
+createToggleButton("Aimlock", UDim2.new(0, 10, 0, 210), aimlock, function(state) aimlock = state end)
+createToggleButton("Silent Aim", UDim2.new(0, 10, 0, 250), silentAim, function(state) silentAim = state end)
+createToggleButton("Auto Shot", UDim2.new(0, 10, 0, 290), autoShot, function(state) autoShot = state end)
+createToggleButton("Auto Scope", UDim2.new(0, 10, 0, 330), autoScope, function(state) autoScope = state end)
+
+createSlider("FOV", UDim2.new(0, 220, 0, 10), fovValue, 0, 10, function(value) fovValue = value end)
+createSlider("Smoothness", UDim2.new(0, 220, 0, 50), smoothnessValue, 0, 10, function(value) smoothnessValue = value end)
+
+-- Aimbot Functionality Placeholder
+local function aimAt(target)
+    if isAimbotEnabled and target then
+        if not friendlyFireEnabled and target.Team == game.Players.LocalPlayer.Team then
+            return -- Skip aiming at teammates if Friendly Fire is OFF
+        end
+        -- Add further aimbot logic using aimlock, silent aim, etc.
+    end
+end
+
+-- ESP Functionality Placeholder
+local function updateESP()
+    if isESPEnabled then
+        -- Implement ESP logic to highlight players
+    end
+end
+
+-- Run Aimbot and ESP Updates
+game:GetService("RunService").RenderStepped:Connect(function()
+    if isAimbotEnabled then
+        -- Run aimbot target acquisition and aiming logic
+    end
+    if isESPEnabled then
+        updateESP()
+    end
+end)
