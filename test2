@@ -1,0 +1,48 @@
+-- Existing Script Code
+-- (Keep all the existing code above as-is)
+
+--// GUI Setup
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+local mainFrame = Instance.new("Frame", ScreenGui)
+mainFrame.Size = UDim2.new(0, 300, 0, 150)
+mainFrame.Position = UDim2.new(0.5, -150, 0.1, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.Visible = true
+
+-- Show/Hide GUI with RightShift key
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        mainFrame.Visible = not mainFrame.Visible
+    end
+end)
+
+-- Label for Aimbot Strength
+local strengthLabel = Instance.new("TextLabel", mainFrame)
+strengthLabel.Size = UDim2.new(0, 280, 0, 30)
+strengthLabel.Position = UDim2.new(0, 10, 0, 10)
+strengthLabel.Text = "Aimbot Strength: " .. tostring(AimbotStrength)
+strengthLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+strengthLabel.BackgroundTransparency = 1
+
+-- Aimbot Strength Slider
+local slider = Instance.new("TextButton", mainFrame)
+slider.Size = UDim2.new(0, 280, 0, 20)
+slider.Position = UDim2.new(0, 10, 0, 50)
+slider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+
+-- Slider functionality
+slider.MouseButton1Down:Connect(function()
+    local inputConnection
+    inputConnection = RunService.RenderStepped:Connect(function()
+        local mousePos = UserInputService:GetMouseLocation().X
+        local sliderPos = math.clamp((mousePos - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+        AimbotStrength = math.floor((sliderPos * 1) * 10) / 10 -- Ranges from 0 to 1
+        strengthLabel.Text = "Aimbot Strength: " .. tostring(AimbotStrength)
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            inputConnection:Disconnect()
+        end
+    end)
+end)
