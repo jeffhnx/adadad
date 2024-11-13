@@ -6,19 +6,20 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
 --// Variables
-local isAimbotEnabled = false
-local isESPEnabled = false
-local selectedAimKey = Enum.UserInputType.MouseButton1 -- Default aim key
-local AimbotStrength = 0.5
-local closestPlayer = nil
+local AimbotEnabled = false
+local ESPEnabled = true
+local AimbotStrength = 0.5 -- Sensitivity for aiming
+local selectedAimKey = Enum.KeyCode.LeftControl -- Default aim key
 local isGUIVisible = true
 local waitingForKeyPress = false
+local refreshRate = 1 -- ESP refresh rate in seconds
+local closestPlayer = nil
 
 --// GUI Creation
 local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
 local mainFrame = Instance.new("Frame", ScreenGui)
-mainFrame.Size = UDim2.new(0, 300, 0, 400)
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+mainFrame.Size = UDim2.new(0, 300, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -150)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.Visible = true
 
@@ -45,7 +46,7 @@ local function createToggleButton(text, position, initialState, callback)
     end)
 end
 
--- Create Slider Function
+-- Create Slider Function for Aimbot Strength
 local function createSlider(text, position, initialValue, minValue, maxValue, callback)
     local sliderLabel = Instance.new("TextLabel", mainFrame)
     sliderLabel.Position = position
@@ -77,28 +78,22 @@ local function createSlider(text, position, initialValue, minValue, maxValue, ca
     end)
 end
 
--- Aimbot Toggle
-createToggleButton("Aimbot Enabled", UDim2.new(0, 10, 0, 10), isAimbotEnabled, function(state) 
-    isAimbotEnabled = state 
+-- Aimbot Toggle Button
+createToggleButton("Aimbot Enabled", UDim2.new(0, 10, 0, 10), AimbotEnabled, function(state)
+    AimbotEnabled = state
 end)
 
--- ESP Toggle
-createToggleButton("ESP Enabled", UDim2.new(0, 10, 0, 70), isESPEnabled, function(state) 
-    isESPEnabled = state
-    ToggleESP() -- Ensure ESP state updates when toggled
-end)
-
--- Slider for Aimbot Smoothness Control
-createSlider("Smoothness", UDim2.new(0, 10, 0, 130), AimbotStrength, 0, 1, function(value) 
-    AimbotStrength = value 
+-- Slider for Aimbot Strength Control
+createSlider("Smoothness", UDim2.new(0, 10, 0, 70), AimbotStrength, 0, 1, function(value)
+    AimbotStrength = value
 end)
 
 -- Aim Key Selection Button
 local setKeyButton = Instance.new("TextButton", mainFrame)
 setKeyButton.Size = UDim2.new(0, 280, 0, 50)
-setKeyButton.Position = UDim2.new(0, 10, 0, 190)
+setKeyButton.Position = UDim2.new(0, 10, 0, 130)
 setKeyButton.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
-setKeyButton.Text = "Set Aimbot Key"
+setKeyButton.Text = "Set Aimbot Key: " .. tostring(selectedAimKey)
 
 setKeyButton.MouseButton1Click:Connect(function()
     waitingForKeyPress = true
@@ -107,16 +102,36 @@ end)
 
 UserInputService.InputBegan:Connect(function(input)
     if waitingForKeyPress then
-        selectedAimKey = input.KeyCode or input.UserInputType
+        selectedAimKey = input.KeyCode
         setKeyButton.Text = "Set Aimbot Key: " .. tostring(selectedAimKey)
         waitingForKeyPress = false
     end
 end)
 
--- Aimbot Functionality
+-- Aimbot Function
 local function Aimbot()
-    if isAimbotEnabled and closestPlayer and UserInputService:IsKeyDown(selectedAimKey) then
-        if closestPlayer.Character and closestPlayer.Character:FindFirstChild("Head") then
+    if AimbotEnabled and UserInputService:IsKeyDown(selectedAimKey) then
+        local closestDistance = math.huge
+        closestPlayer = nil
+
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character and player.Character:FindFirstChild("Head") then
+                local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0)
+                local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
+
+                if onScreen then
+                    local mousePosition = UserInputService:GetMouseLocation()
+                    local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestPlayer = player
+                    end
+                end
+            end
+        end
+
+        if closestPlayer then
             local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0)
             local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
             Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength)
@@ -124,46 +139,7 @@ local function Aimbot()
     end
 end
 
--- ESP Functionality
-local function ToggleESP()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local highlight = player.Character:FindFirstChildOfClass("Highlight") or Instance.new("Highlight", player.Character)
-            highlight.Enabled = isESPEnabled
-            highlight.FillColor = player.Team == LocalPlayer.Team and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-            highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
-        end
-    end
-end
-
--- Update Closest Player for Aimbot
-local function findClosestPlayer()
-    local closestDistance = math.huge
-    closestPlayer = nil
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character and player.Character:FindFirstChild("Head") then
-            local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0)
-            local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
-
-            if onScreen then
-                local mousePosition = UserInputService:GetMouseLocation()
-                local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
-
-                if distance < closestDistance then
-                    closestDistance = distance
-                    closestPlayer = player
-                end
-            end
-        end
-    end
-end
-
--- Run Aimbot and ESP Toggles
+-- Run Aimbot with RenderStepped
 RunService.RenderStepped:Connect(function()
-    if isESPEnabled then ToggleESP() end
-    if isAimbotEnabled then
-        findClosestPlayer()
-        Aimbot()
-    end
+    Aimbot()
 end)
