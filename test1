@@ -9,6 +9,7 @@ local LocalPlayer = Players.LocalPlayer
 local AimbotEnabled = true
 local ESPEnabled = true
 local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
+local aimKey = Enum.KeyCode.LeftControl -- Default aimbot key
 local LeftControlHeld = false
 local refreshRate = 1 -- seconds
 
@@ -98,6 +99,25 @@ createSlider("Aimbot Strength", UDim2.new(0, 220, 0, 10), AimbotStrength, 0, 1, 
 createSlider("FOV", UDim2.new(0, 220, 0, 50), fovValue, 0, 10, function(value) fovValue = value end)
 createSlider("Smoothness", UDim2.new(0, 220, 0, 90), smoothnessValue, 0, 10, function(value) smoothnessValue = value end)
 
+-- Create Aim Key Selector
+local aimKeyLabel = Instance.new("TextLabel")
+aimKeyLabel.Size = UDim2.new(0, 200, 0, 30)
+aimKeyLabel.Position = UDim2.new(0, 10, 0, 150)
+aimKeyLabel.Text = "Aimbot Key: LeftControl"
+aimKeyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimKeyLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+aimKeyLabel.Parent = mainFrame
+
+aimKeyLabel.MouseButton1Click:Connect(function()
+    if aimKey == Enum.KeyCode.LeftControl then
+        aimKey = Enum.KeyCode.Space -- Change to Space for demonstration
+        aimKeyLabel.Text = "Aimbot Key: Space"
+    else
+        aimKey = Enum.KeyCode.LeftControl -- Change back to LeftControl
+        aimKeyLabel.Text = "Aimbot Key: LeftControl"
+    end
+end)
+
 --// ESP Function
 local function CreateESP(player)
     local highlight = Instance.new("Highlight")
@@ -124,7 +144,7 @@ end
 
 --// Aimbot Function
 local function Aimbot()
-    if AimbotEnabled then
+    if AimbotEnabled and LeftControlHeld then
         local closestPlayer = nil
         local closestDistance = math.huge
 
@@ -156,6 +176,19 @@ local function Aimbot()
         end
     end
 end
+
+--// User Input for Aimbot Key
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == aimKey then
+        LeftControlHeld = true -- Aimbot is activated
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == aimKey then
+        LeftControlHeld = false -- Aimbot is deactivated
+    end
+end)
 
 --// Run Service Loop
 RunService.RenderStepped:Connect(function()
