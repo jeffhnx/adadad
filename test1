@@ -1,0 +1,84 @@
+-- Define variables for ESP and aimbot toggle
+local espEnabled = false
+local aimbotEnabled = false
+local guiVisible = false
+
+-- Create the GUI container
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local EspToggle = Instance.new("TextButton")
+local AimbotToggle = Instance.new("TextButton")
+local CircularSlider = Instance.new("ImageButton")
+
+-- Configure the main GUI frame
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+MainFrame.Size = UDim2.new(0, 200, 0, 250)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -125)
+MainFrame.Visible = guiVisible
+MainFrame.Parent = ScreenGui
+
+-- Configure ESP toggle button
+EspToggle.Size = UDim2.new(0, 180, 0, 40)
+EspToggle.Position = UDim2.new(0, 10, 0, 20)
+EspToggle.Text = "Toggle ESP (Off)"
+EspToggle.Parent = MainFrame
+
+-- Configure Aimbot toggle button
+AimbotToggle.Size = UDim2.new(0, 180, 0, 40)
+AimbotToggle.Position = UDim2.new(0, 10, 0, 80)
+AimbotToggle.Text = "Toggle Aimbot (Off)"
+AimbotToggle.Parent = MainFrame
+
+-- Configure circular slider (just for visuals here)
+CircularSlider.Size = UDim2.new(0, 50, 0, 50)
+CircularSlider.Position = UDim2.new(0.5, -25, 0.7, -25)
+CircularSlider.Image = "rbxassetid://example_image_id"  -- Replace with actual asset ID
+CircularSlider.Parent = MainFrame
+
+-- Function to toggle ESP
+EspToggle.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    EspToggle.Text = espEnabled and "Toggle ESP (On)" or "Toggle ESP (Off)"
+    if espEnabled then
+        -- Add ESP functionality here
+    else
+        -- Disable ESP functionality here
+    end
+end)
+
+-- Function to toggle Aimbot
+AimbotToggle.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    AimbotToggle.Text = aimbotEnabled and "Toggle Aimbot (On)" or "Toggle Aimbot (Off)"
+    if aimbotEnabled then
+        -- Add Aimbot functionality here
+    else
+        -- Disable Aimbot functionality here
+    end
+end)
+
+-- Function to show/hide GUI with Right Shift
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        guiVisible = not guiVisible
+        MainFrame.Visible = guiVisible
+    end
+end)
+
+-- Implement ESP and Aimbot functionality
+function enableESP()
+    -- Your ESP logic goes here
+end
+
+function disableESP()
+    -- Disable ESP logic
+end
+
+function enableAimbot()
+    -- Your Aimbot logic goes here
+end
+
+function disableAimbot()
+    -- Disable Aimbot logic
+end
