@@ -30,7 +30,6 @@ ScreenGui.Enabled = false  -- Initially hidden
 local aimbotEnabled = false
 local espEnabled = false
 local aimbotTarget = nil  -- To store the target player while Right Click is held
-local espPlayers = {}
 
 local function toggleAimbot()
     aimbotEnabled = not aimbotEnabled
@@ -62,26 +61,38 @@ end
 
 -- ESP Function: Highlight players' entire body
 local function highlightPlayers()
-    -- Clear previous ESP players
-    espPlayers = {}
-
     for _, player in pairs(Players:GetPlayers()) do
-        if player.Character and player.Character:FindFirstChild("Head") then
+        if player.Character and player.Character:FindFirstChild("Head") and player.Character:FindFirstChild("HumanoidRootPart") then
             local color = player.Team == game.Players.LocalPlayer.Team and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-            -- Create or update ESP for this player
-            local character = player.Character
-            local headPos = character.Head.Position
-            local humanoidRootPartPos = character.HumanoidRootPart.Position
-            local screenPosHead = Camera:WorldToScreenPoint(headPos)
-            local screenPosRoot = Camera:WorldToScreenPoint(humanoidRootPartPos)
 
-            -- Add the player to the ESP list for rendering purposes
-            table.insert(espPlayers, {
-                player = player,
-                screenPosHead = screenPosHead,
-                screenPosRoot = screenPosRoot,
-                color = color,
-            })
+            -- Get the player's character, head and humanoid root part
+            local character = player.Character
+            local head = character.Head
+            local humanoidRootPart = character.HumanoidRootPart
+
+            -- Get the world positions
+            local headPos = head.Position
+            local humanoidRootPos = humanoidRootPart.Position
+
+            -- Convert world positions to 2D screen space
+            local screenPosHead = Camera:WorldToScreenPoint(headPos)
+            local screenPosRoot = Camera:WorldToScreenPoint(humanoidRootPos)
+
+            -- Calculate the width and height of the player body
+            local width = math.abs(screenPosHead.X - screenPosRoot.X)
+            local height = math.abs(screenPosHead.Y - screenPosRoot.Y)
+
+            -- Draw a box around the entire player body using the head and humanoid root part positions
+            local espBox = Instance.new("Frame")
+            espBox.Size = UDim2.new(0, width, 0, height)
+            espBox.Position = UDim2.new(0, screenPosRoot.X - width / 2, 0, screenPosRoot.Y - height / 2)
+            espBox.BackgroundColor3 = color
+            espBox.BackgroundTransparency = 0.5  -- Semi-transparent for the box
+            espBox.BorderSizePixel = 0  -- Remove border
+            espBox.Parent = ScreenGui
+
+            -- Remove the ESP box after a short duration to avoid cluttering
+            game.Debris:AddItem(espBox, 0.1)
         end
     end
 end
@@ -151,31 +162,4 @@ end)
 -- Highlight ESP when ESP button is clicked
 ESPButton.MouseButton1Click:Connect(function()
     highlightPlayers()  -- Refresh ESP list of players
-end)
-
--- Draw ESP for all players in the game
-RunService.Heartbeat:Connect(function()
-    if espEnabled then
-        for _, espPlayer in pairs(espPlayers) do
-            local player = espPlayer.player
-            local screenPosHead = espPlayer.screenPosHead
-            local screenPosRoot = espPlayer.screenPosRoot
-            local color = espPlayer.color
-
-            -- Draw a rectangle around the whole player body using the head and humanoid root part positions
-            local width = math.abs(screenPosRoot.X - screenPosHead.X)
-            local height = math.abs(screenPosRoot.Y - screenPosHead.Y)
-
-            local espBox = Instance.new("Frame")
-            espBox.Size = UDim2.new(0, width, 0, height)
-            espBox.Position = UDim2.new(0, screenPosHead.X - width / 2, 0, screenPosHead.Y - height / 2)
-            espBox.BackgroundColor3 = color
-            espBox.BackgroundTransparency = 0.5  -- Semi-transparent for the box
-            espBox.BorderSizePixel = 0  -- Remove border
-            espBox.Parent = ScreenGui
-
-            -- Remove the ESP box after a short duration to avoid cluttering
-            game.Debris:AddItem(espBox, 0.1)
-        end
-    end
 end)
