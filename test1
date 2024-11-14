@@ -12,6 +12,24 @@ local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
 local RightClickHeld = false
 local refreshRate = 1 -- seconds
 
+--// GUI Elements
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.Players.LocalPlayer.PlayerGui
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0, 200, 0, 50)
+ToggleButton.Position = UDim2.new(0.5, -100, 0.5, -25)
+ToggleButton.Text = "Toggle Aimbot"
+ToggleButton.Parent = ScreenGui
+
+local AimbotStrengthSlider = Instance.new("Slider")
+AimbotStrengthSlider.Size = UDim2.new(0, 200, 0, 20)
+AimbotStrengthSlider.Position = UDim2.new(0.5, -100, 0.6, -10)
+AimbotStrengthSlider.MinValue = 0
+AimbotStrengthSlider.MaxValue = 1
+AimbotStrengthSlider.Value = AimbotStrength
+AimbotStrengthSlider.Parent = ScreenGui
+
 --// ESP Function
 local function CreateESP(player)
     local highlight = Instance.new("Highlight")
@@ -32,7 +50,7 @@ local function CreateESP(player)
     player.CharacterRemoving:Connect(function()
         highlight:Destroy()
     end)
-    
+
     return highlight -- Return the highlight instance
 end
 
@@ -137,16 +155,15 @@ Players.PlayerAdded:Connect(function(player)
     SetupPlayer(player) -- Setup ESP for new players
 end)
 
---// Show ESP when the Toggle is ON
-local function toggleESP()
-    ESPEnabled = not ESPEnabled
-end
+--// Toggle the Aimbot and ESP from the GUI Button
+ToggleButton.MouseButton1Click:Connect(function()
+    AimbotEnabled = not AimbotEnabled
+    ToggleButton.Text = AimbotEnabled and "Disable Aimbot" or "Enable Aimbot"
+end)
 
--- Example for toggling the ESP feature
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.E then
-        toggleESP()  -- Toggle ESP when pressing E
-    end
+--// Update Aimbot Strength using the Slider
+AimbotStrengthSlider.Changed:Connect(function()
+    AimbotStrength = AimbotStrengthSlider.Value
 end)
 
 print("Aimbot and ESP system initialized successfully.")
