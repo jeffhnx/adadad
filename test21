@@ -2,6 +2,7 @@
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local Camera = game:GetService("Workspace").CurrentCamera
+local RunService = game:GetService("RunService")
 
 -- Create the GUI elements
 local ScreenGui = Instance.new("ScreenGui")
@@ -21,7 +22,7 @@ ESPButton.Size = UDim2.new(0, 200, 0, 50)
 ESPButton.Position = UDim2.new(0, 0, 0, 100)
 ESPButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 
--- Aimbot Logic
+-- Aimbot and ESP state variables
 local aimbotEnabled = false
 local espEnabled = false
 
@@ -40,33 +41,34 @@ end
 AimbotButton.MouseButton1Click:Connect(toggleAimbot)
 ESPButton.MouseButton1Click:Connect(toggleESP)
 
--- Aimbot Function
+-- Aimbot Function: Lock onto the closest player's head
 local function aimAtPlayer(target)
     if target and target.Character and target.Character:FindFirstChild("Head") then
         local targetHead = target.Character.Head
-        local screenPos = Camera:WorldToScreenPoint(targetHead.Position)
-        -- Move camera (or aimbot mechanism)
-        -- Example: Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHead.Position)
+        -- Calculate the direction from the camera to the player's head
+        local direction = (targetHead.Position - Camera.CFrame.Position).unit
+        -- Set the camera's CFrame to look at the player's head
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHead.Position)
     end
 end
 
--- ESP Function
+-- ESP Function: Highlight players and refresh every second
 local function highlightPlayers()
     for _, player in pairs(Players:GetPlayers()) do
         if player.Character and player.Character:FindFirstChild("Head") then
             local color = player.Team == game.Players.LocalPlayer.Team and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
             -- Create or update ESP for this player
-            -- Example: Draw a box around the player's head
+            -- Example: Draw a box around the player's head (this part can be customized for your game)
             local headPos = player.Character.Head.Position
             local screenPos = Camera:WorldToScreenPoint(headPos)
-            -- Draw a GUI element at screenPos, with the specified color
+            -- You can draw a GUI element here or use a 3D ESP, depending on your game's engine.
         end
     end
 end
 
--- Update functions
+-- Update functions: Run every frame to check for Aimbot and ESP
 local lastESPUpdate = tick()
-game:GetService("RunService").Heartbeat:Connect(function()
+RunService.Heartbeat:Connect(function()
     if espEnabled and tick() - lastESPUpdate >= 1 then
         highlightPlayers()
         lastESPUpdate = tick()
@@ -92,7 +94,7 @@ game:GetService("RunService").Heartbeat:Connect(function()
     end
 end)
 
--- Toggle GUI with Left Shift key
+-- Toggle GUI visibility with Left Shift key
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.LeftShift then
