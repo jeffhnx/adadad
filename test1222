@@ -1,8 +1,6 @@
 -- GUI Setup
 
 local player = game.Players.LocalPlayer
-local mouse = player:GetMouse() -- Gets the player's mouse object
-local camera = game.Workspace.CurrentCamera
 
 -- Create the GUI
 local screenGui = Instance.new("ScreenGui")
@@ -68,16 +66,6 @@ sliderButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 sliderButton.Text = ""
 sliderButton.Parent = sliderFrame
 
-local aimbotStrength = 0 -- Default strength
-
--- Function to update the slider value
-sliderButton.MouseMoved:Connect(function(x, y)
-    local relativeX = x - sliderFrame.AbsolutePosition.X
-    local clampedX = math.clamp(relativeX, 0, sliderFrame.AbsoluteSize.X)
-    sliderBar.Size = UDim2.new(0, clampedX, 1, 0)
-    aimbotStrength = clampedX / sliderFrame.AbsoluteSize.X
-end)
-
 -- Close GUI with RightShift key
 local guiVisible = true
 game:GetService("UserInputService").InputBegan:Connect(function(input)
@@ -85,62 +73,4 @@ game:GetService("UserInputService").InputBegan:Connect(function(input)
         guiVisible = not guiVisible
         screenGui.Enabled = guiVisible
     end
-end)
-
--- Functions for Aimbot and ESP
-local function getPlayerHeadPosition(targetPlayer)
-    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
-        return targetPlayer.Character.Head.Position
-    end
-    return nil
-end
-
-local function calculateAimAngle(fromPosition, toPosition)
-    local direction = (toPosition - fromPosition).unit
-    local angleX = math.atan2(direction.Y, direction.Z)
-    local angleY = math.atan2(direction.X, direction.Z)
-    return angleX, angleY
-end
-
-local function aimAtHead(targetPlayer)
-    local headPos = getPlayerHeadPosition(targetPlayer)
-    if headPos then
-        local playerPos = player.Character.HumanoidRootPart.Position
-        local cameraPos = camera.CFrame.Position
-        
-        -- Calculate the angle to aim at the head
-        local angleX, angleY = calculateAimAngle(cameraPos, headPos)
-
-        -- Apply the calculated angles to the camera's orientation
-        camera.CFrame = CFrame.new(cameraPos, headPos) 
-    end
-end
-
--- Find and aim at the nearest player with the Aimbot toggle
-aimbotToggle.MouseButton1Click:Connect(function()
-    local nearestPlayer = nil
-    local shortestDistance = math.huge
-
-    for _, targetPlayer in ipairs(game.Players:GetPlayers()) do
-        if targetPlayer ~= player and targetPlayer.Character then
-            local headPos = getPlayerHeadPosition(targetPlayer)
-            if headPos then
-                local distance = (player.Character.HumanoidRootPart.Position - headPos).magnitude
-                if distance < shortestDistance then
-                    nearestPlayer = targetPlayer
-                    shortestDistance = distance
-                end
-            end
-        end
-    end
-    
-    if nearestPlayer then
-        aimAtHead(nearestPlayer)
-    end
-end)
-
--- ESP Toggle Logic
-espToggle.MouseButton1Click:Connect(function()
-    -- Implement ESP logic here
-    print("ESP toggled")
 end)
