@@ -1,0 +1,136 @@
+-- Define variables for ESP and aimbot toggle
+local espEnabled = false
+local aimbotEnabled = false
+local guiVisible = false
+local targetPlayer = nil
+local refreshRate = 1 -- refresh every second for ESP
+
+-- Create the GUI container
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local EspToggle = Instance.new("TextButton")
+local AimbotToggle = Instance.new("TextButton")
+local CircularSlider = Instance.new("ImageButton")
+
+-- Configure the main GUI frame
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+MainFrame.Size = UDim2.new(0, 200, 0, 250)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -125)
+MainFrame.Visible = guiVisible
+MainFrame.Parent = ScreenGui
+
+-- Configure ESP toggle button
+EspToggle.Size = UDim2.new(0, 180, 0, 40)
+EspToggle.Position = UDim2.new(0, 10, 0, 20)
+EspToggle.Text = "Toggle ESP (Off)"
+EspToggle.Parent = MainFrame
+
+-- Configure Aimbot toggle button
+AimbotToggle.Size = UDim2.new(0, 180, 0, 40)
+AimbotToggle.Position = UDim2.new(0, 10, 0, 80)
+AimbotToggle.Text = "Toggle Aimbot (Off)"
+AimbotToggle.Parent = MainFrame
+
+-- Configure circular slider (just for visuals here)
+CircularSlider.Size = UDim2.new(0, 50, 0, 50)
+CircularSlider.Position = UDim2.new(0.5, -25, 0.7, -25)
+CircularSlider.Image = "rbxassetid://example_image_id"  -- Replace with actual asset ID
+CircularSlider.Parent = MainFrame
+
+-- Function to toggle ESP
+EspToggle.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    EspToggle.Text = espEnabled and "Toggle ESP (On)" or "Toggle ESP (Off)"
+    if espEnabled then
+        enableESP()
+    else
+        disableESP()
+    end
+end)
+
+-- Function to toggle Aimbot
+AimbotToggle.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    AimbotToggle.Text = aimbotEnabled and "Toggle Aimbot (On)" or "Toggle Aimbot (Off)"
+end)
+
+-- Right-shift to show/hide GUI
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        guiVisible = not guiVisible
+        MainFrame.Visible = guiVisible
+    end
+end)
+
+-- ESP functionality
+function enableESP()
+    while espEnabled do
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer and player.Character then
+                -- Highlight character
+                for _, part in pairs(player.Character:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        local highlight = Instance.new("BoxHandleAdornment")
+                        highlight.Adornee = part
+                        highlight.Size = part.Size + Vector3.new(0.1, 0.1, 0.1)
+                        highlight.Color3 = Color3.new(1, 0, 0) -- Red color for highlight
+                        highlight.Transparency = 0.5
+                        highlight.AlwaysOnTop = true
+                        highlight.Parent = part
+                        
+                        -- Remove highlight after 1 second to refresh
+                        game.Debris:AddItem(highlight, refreshRate)
+                    end
+                end
+            end
+        end
+        wait(refreshRate)
+    end
+end
+
+function disableESP()
+    -- Remove all highlights
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player.Character then
+            for _, part in pairs(player.Character:GetChildren()) do
+                if part:IsA("BasePart") and part:FindFirstChildOfClass("BoxHandleAdornment") then
+                    part:FindFirstChildOfClass("BoxHandleAdornment"):Destroy()
+                end
+            end
+        end
+    end
+end
+
+-- Aimbot functionality
+local Camera = game.Workspace.CurrentCamera
+
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 and aimbotEnabled then  -- Right-click
+        local closestPlayer, closestDistance = nil, math.huge
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                local headPosition = player.Character.Head.Position
+                local screenPoint = Camera:WorldToScreenPoint(headPosition)
+                local distanceFromCursor = (Vector2.new(screenPoint.X, screenPoint.Y) - UserInputService:GetMouseLocation()).Magnitude
+                if distanceFromCursor < closestDistance then
+                    closestPlayer = player
+                    closestDistance = distanceFromCursor
+                end
+            end
+        end
+        targetPlayer = closestPlayer
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        targetPlayer = nil  -- Stop tracking when right-click is released
+    end
+end)
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPlayer.Character.Head.Position)
+    end
+end)
