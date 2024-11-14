@@ -9,10 +9,10 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
 screenGui.IgnoreGuiInset = true
 
--- Frame for the GUI
+-- Frame for the GUI (centered)
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 300, 0, 500)
-mainFrame.Position = UDim2.new(0, 10, 0, 10)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -250)  -- Center of the screen
 mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 mainFrame.BackgroundTransparency = 0.5
 mainFrame.Parent = screenGui
