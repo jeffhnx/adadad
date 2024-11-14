@@ -49,8 +49,8 @@ SmoothnessSlider.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 
 -- Slider Bar
 SliderBar.Parent = SmoothnessSlider
-SliderBar.Size = UDim2.new(0, 180, 0, 20)
-SliderBar.Position = UDim2.new(0, 10, 0, 25)
+SliderBar.Size = UDim2.new(0, 180, 0, 15) -- Smaller slider
+SliderBar.Position = UDim2.new(0, 10, 0, 30)
 SliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 
 -- Slider Fill
@@ -63,6 +63,7 @@ local aimbotEnabled = false
 local espEnabled = false
 local aimbotSmoothness = 0.5 -- Default smoothness
 local guiVisible = false
+local draggingSlider = false
 
 -- Functions
 local function toggleAimbot()
@@ -119,13 +120,22 @@ end
 -- Connect GUI events
 AimbotToggle.MouseButton1Click:Connect(toggleAimbot)
 ESPToggle.MouseButton1Click:Connect(toggleESP)
+
 SliderBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        draggingSlider = true
         adjustSmoothness(input)
     end
 end)
+
+SliderBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        draggingSlider = false
+    end
+end)
+
 SliderBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
+    if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
         adjustSmoothness(input)
     end
 end)
