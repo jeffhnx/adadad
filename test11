@@ -1,9 +1,10 @@
--- Define variables for ESP and aimbot toggle
+-- Define variables for ESP, aimbot, GUI visibility, and aimbot strength
 local espEnabled = false
 local aimbotEnabled = false
 local guiVisible = false
 local targetPlayer = nil
 local refreshRate = 1 -- refresh every second for ESP
+local aimbotStrength = 0.1 -- Default strength; lower is smoother
 
 -- Create the GUI container
 local ScreenGui = Instance.new("ScreenGui")
@@ -11,11 +12,12 @@ local MainFrame = Instance.new("Frame")
 local EspToggle = Instance.new("TextButton")
 local AimbotToggle = Instance.new("TextButton")
 local CircularSlider = Instance.new("ImageButton")
+local AimbotStrengthSlider = Instance.new("TextButton")
 
 -- Configure the main GUI frame
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-MainFrame.Size = UDim2.new(0, 200, 0, 250)
-MainFrame.Position = UDim2.new(0.5, -100, 0.5, -125)
+MainFrame.Size = UDim2.new(0, 200, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -150)
 MainFrame.Visible = guiVisible
 MainFrame.Parent = ScreenGui
 
@@ -30,6 +32,12 @@ AimbotToggle.Size = UDim2.new(0, 180, 0, 40)
 AimbotToggle.Position = UDim2.new(0, 10, 0, 80)
 AimbotToggle.Text = "Toggle Aimbot (Off)"
 AimbotToggle.Parent = MainFrame
+
+-- Configure aimbot strength slider
+AimbotStrengthSlider.Size = UDim2.new(0, 180, 0, 40)
+AimbotStrengthSlider.Position = UDim2.new(0, 10, 0, 140)
+AimbotStrengthSlider.Text = "Aimbot Strength: 0.1"
+AimbotStrengthSlider.Parent = MainFrame
 
 -- Configure circular slider (just for visuals here)
 CircularSlider.Size = UDim2.new(0, 50, 0, 50)
@@ -61,6 +69,15 @@ UserInputService.InputBegan:Connect(function(input)
         guiVisible = not guiVisible
         MainFrame.Visible = guiVisible
     end
+end)
+
+-- Adjust aimbot strength by clicking the slider (increments by 0.1)
+AimbotStrengthSlider.MouseButton1Click:Connect(function()
+    aimbotStrength = aimbotStrength + 0.1
+    if aimbotStrength > 1 then
+        aimbotStrength = 0.1 -- Reset to minimum
+    end
+    AimbotStrengthSlider.Text = "Aimbot Strength: " .. tostring(aimbotStrength)
 end)
 
 -- ESP functionality
@@ -102,7 +119,7 @@ function disableESP()
     end
 end
 
--- Aimbot functionality
+-- Aimbot functionality with strength smoothing
 local Camera = game.Workspace.CurrentCamera
 
 UserInputService.InputBegan:Connect(function(input)
@@ -131,6 +148,9 @@ end)
 
 game:GetService("RunService").RenderStepped:Connect(function()
     if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
-        Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPlayer.Character.Head.Position)
+        local targetPosition = targetPlayer.Character.Head.Position
+        local direction = (targetPosition - Camera.CFrame.Position).Unit
+        local smoothCFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + direction), aimbotStrength)
+        Camera.CFrame = smoothCFrame
     end
 end)
