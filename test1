@@ -71,8 +71,23 @@ local function toggleESP()
     espEnabled = not espEnabled
     ESPToggle.Text = espEnabled and "ESP: ON" or "ESP: OFF"
     if espEnabled then
-        -- Insert code for team check here
-        -- Example: Iterate over players and highlight only enemies
+        -- Highlight players based on team
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local highlight = Instance.new("Highlight")
+                highlight.Parent = player.Character
+                highlight.FillColor = (player.Team == game.Players.LocalPlayer.Team) and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+                highlight.FillTransparency = 0.5
+                highlight.OutlineTransparency = 1
+            end
+        end
+    else
+        -- Remove highlights
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("Highlight") then
+                player.Character.Highlight:Destroy()
+            end
+        end
     end
 end
 
@@ -83,10 +98,10 @@ end
 
 local function changeKey()
     if selectedKey == Enum.KeyCode.LeftControl then
-        selectedKey = Enum.KeyCode.ButtonR2 -- Example for right-click
+        selectedKey = Enum.UserInputType.MouseButton2 -- Right-click
         KeyDropdown.Text = "Select Key: Right Click"
-    elseif selectedKey == Enum.KeyCode.ButtonR2 then
-        selectedKey = Enum.KeyCode.ButtonL2 -- Example for left click
+    elseif selectedKey == Enum.UserInputType.MouseButton2 then
+        selectedKey = Enum.UserInputType.MouseButton1 -- Left-click
         KeyDropdown.Text = "Select Key: Left Click"
     else
         selectedKey = Enum.KeyCode.LeftControl
@@ -118,13 +133,12 @@ KeyDropdown.MouseButton1Click:Connect(changeKey)
 game:GetService("UserInputService").InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.RightShift then
         toggleGuiVisibility()
-    elseif input.KeyCode == selectedKey and aimbotEnabled then
+    elseif input.UserInputType == selectedKey and aimbotEnabled then
         -- Target the nearest enemy player here (pseudo-code below)
         local targetPlayer = nil
-        -- Iterate over players and choose the closest target to aim at
         for _, player in pairs(game.Players:GetPlayers()) do
-            if player.Team ~= game.Players.LocalPlayer.Team then -- Team check
-                targetPlayer = player.Character -- Assuming enemy character has a "Head"
+            if player.Team ~= game.Players.LocalPlayer.Team then
+                targetPlayer = player.Character -- Target enemy
                 break
             end
         end
