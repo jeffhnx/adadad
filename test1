@@ -1,86 +1,63 @@
---// Services
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
-local Camera = workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
+-- Assuming you are working with a Roblox-like game or any 3D environment
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse() -- Gets the player's mouse object
+local camera = game.Workspace.CurrentCamera
 
---// Variables
-local AimbotEnabled = false
-local AimbotStrength = 0.5
-local RightClickHeld = false
-local refreshRate = 1 -- seconds
+-- Function to get the player's head position
+function getPlayerHeadPosition(targetPlayer)
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
+        return targetPlayer.Character.Head.Position
+    end
+    return nil
+end
 
---// GUI Setup
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game.Players.LocalPlayer.PlayerGui
+-- Function to calculate the angle between two points (from the player's camera to the target's head)
+function calculateAimAngle(fromPosition, toPosition)
+    local direction = (toPosition - fromPosition).unit
+    local angleX = math.atan2(direction.Y, direction.Z)
+    local angleY = math.atan2(direction.X, direction.Z)
+    return angleX, angleY
+end
 
-local AimbotToggleButton = Instance.new("TextButton")
-AimbotToggleButton.Size = UDim2.new(0, 200, 0, 50)
-AimbotToggleButton.Position = UDim2.new(0.5, -100, 0.5, -25)
-AimbotToggleButton.Text = "Toggle Aimbot"
-AimbotToggleButton.Parent = ScreenGui
+-- Function to lock on to the target's head
+function aimAtHead(targetPlayer)
+    local headPos = getPlayerHeadPosition(targetPlayer)
+    if headPos then
+        -- Get the player's position and the camera's position
+        local playerPos = player.Character.HumanoidRootPart.Position
+        local cameraPos = camera.CFrame.Position
+        
+        -- Calculate the angle to aim at the head
+        local angleX, angleY = calculateAimAngle(cameraPos, headPos)
 
---// Aimbot Function
-local function Aimbot()
-    if RightClickHeld and AimbotEnabled then
-        local closestPlayer = nil
-        local closestDistance = math.huge
-
-        -- Loop through all players to find the closest one
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                -- Check if player is an enemy (not on the same team)
-                if player.Team ~= LocalPlayer.Team then
-                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aim at head level
-                    local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
-
-                    if onScreen then
-                        local mousePosition = UserInputService:GetMouseLocation()
-                        local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
-
-                        if distance < closestDistance then
-                            closestDistance = distance
-                            closestPlayer = player
-                        end
-                    end
-                end
-            end
-        end
-
-        -- Aim at the closest player’s head
-        if closestPlayer then
-            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aim at head level
-            local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
-            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition to target
-        end
+        -- Apply the calculated angles to the camera's orientation (example)
+        -- In Roblox, the camera orientation would typically be set via the CameraSubject or CFrame
+        -- For simplicity, we're assuming this is done via CFrame manipulation
+        camera.CFrame = CFrame.new(cameraPos, headPos)  -- Smooth aiming can be added here
     end
 end
 
---// User Input for Right-Click
-UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        RightClickHeld = true -- Right click held to enable aimbot
-    end
-end)
+-- Example: Targeting the nearest player
+game:GetService("RunService").Heartbeat:Connect(function()
+    local nearestPlayer = nil
+    local shortestDistance = math.huge
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        RightClickHeld = false -- Release right click to disable aimbot
+    -- Find the nearest player (excluding the local player)
+    for _, targetPlayer in ipairs(game.Players:GetPlayers()) do
+        if targetPlayer ~= player and targetPlayer.Character then
+            local headPos = getPlayerHeadPosition(targetPlayer)
+            if headPos then
+                local distance = (player.Character.HumanoidRootPart.Position - headPos).magnitude
+                if distance < shortestDistance then
+                    nearestPlayer = targetPlayer
+                    shortestDistance = distance
+                end
+            end
+        end
     end
-end)
-
---// Toggle Aimbot On/Off with GUI
-AimbotToggleButton.MouseButton1Click:Connect(function()
-    AimbotEnabled = not AimbotEnabled
-    if AimbotEnabled then
-        AimbotToggleButton.Text = "Aimbot ON"
-    else
-        AimbotToggleButton.Text = "Aimbot OFF"
+    
+    -- If a player is found, aim at their head
+    if nearestPlayer then
+        aimAtHead(nearestPlayer)
     end
-end)
-
---// Run Service Loop for Aimbot
-RunService.RenderStepped:Connect(function()
-    Aimbot()
 end)
