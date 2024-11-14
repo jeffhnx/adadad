@@ -1,6 +1,7 @@
--- Define variables for ESP, aimbot, GUI visibility, aimbot strength
+-- Define variables for ESP, aimbot, team check, and GUI visibility
 local espEnabled = false
 local aimbotEnabled = false
+local teamCheckEnabled = false
 local guiVisible = false
 local targetPlayer = nil
 local refreshRate = 1 -- refresh every second for ESP
@@ -11,13 +12,14 @@ local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local EspToggle = Instance.new("TextButton")
 local AimbotToggle = Instance.new("TextButton")
+local TeamCheckToggle = Instance.new("TextButton")  -- New button for team check
 local AimbotStrengthLabel = Instance.new("TextLabel")
 local SliderBar = Instance.new("Frame")
 local SliderHandle = Instance.new("Frame")
 
 -- Configure the main GUI frame
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-MainFrame.Size = UDim2.new(0, 200, 0, 300)
+MainFrame.Size = UDim2.new(0, 200, 0, 350)  -- Adjusted height to fit the new button
 MainFrame.Position = UDim2.new(0.5, -100, 0.5, -150)
 MainFrame.Visible = guiVisible
 MainFrame.Parent = ScreenGui
@@ -34,22 +36,28 @@ AimbotToggle.Position = UDim2.new(0, 10, 0, 80)
 AimbotToggle.Text = "Toggle Aimbot (Off)"
 AimbotToggle.Parent = MainFrame
 
+-- Configure Team Check toggle button (new)
+TeamCheckToggle.Size = UDim2.new(0, 180, 0, 40)
+TeamCheckToggle.Position = UDim2.new(0, 10, 0, 140)
+TeamCheckToggle.Text = "Team Check (Off)"
+TeamCheckToggle.Parent = MainFrame
+
 -- Configure Aimbot Strength Label
 AimbotStrengthLabel.Size = UDim2.new(0, 180, 0, 20)
-AimbotStrengthLabel.Position = UDim2.new(0, 10, 0, 140)
+AimbotStrengthLabel.Position = UDim2.new(0, 10, 0, 200)
 AimbotStrengthLabel.Text = "Aimbot Strength: 0.1"
 AimbotStrengthLabel.TextColor3 = Color3.new(1, 1, 1)
 AimbotStrengthLabel.Parent = MainFrame
 
 -- Configure the Slider Bar
 SliderBar.Size = UDim2.new(0, 180, 0, 10)
-SliderBar.Position = UDim2.new(0, 10, 0, 170)
+SliderBar.Position = UDim2.new(0, 10, 0, 230)
 SliderBar.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
 SliderBar.Parent = MainFrame
 
 -- Configure the Slider Handle
 SliderHandle.Size = UDim2.new(0, 10, 0, 20)
-SliderHandle.Position = UDim2.new(0.1, -5, 0, 165)
+SliderHandle.Position = UDim2.new(0.1, -5, 0, 225)
 SliderHandle.BackgroundColor3 = Color3.new(1, 0, 0)
 SliderHandle.Parent = MainFrame
 SliderHandle.ZIndex = 2
@@ -87,7 +95,7 @@ UserInputService.InputChanged:Connect(function(input)
         
         -- Calculate the new position for the handle within the slider bar bounds
         local newHandleX = math.clamp(mouseX - sliderBarX, 0, sliderBarWidth)
-        SliderHandle.Position = UDim2.new(0, newHandleX, 0, 165)
+        SliderHandle.Position = UDim2.new(0, newHandleX, 0, 225)
         
         -- Update the aimbot strength based on the new slider position
         updateAimbotStrength()
@@ -104,23 +112,39 @@ end)
 local function highlightPlayers()
     for _, player in pairs(game.Players:GetPlayers()) do
         if player ~= game.Players.LocalPlayer and player.Character then
-            -- Check for existing highlight
-            local highlight = player.Character:FindFirstChild("ESPHighlight")
-            if not highlight then
-                highlight = Instance.new("Highlight")
-                highlight.Name = "ESPHighlight"
-                highlight.Parent = player.Character
-                highlight.Adornee = player.Character
-                highlight.FillColor = Color3.new(1, 0, 0) -- Red color
-                highlight.FillTransparency = 0.5
-                highlight.OutlineColor = Color3.new(0, 0, 0) -- Black outline
-                highlight.OutlineTransparency = 0
+            -- If Team Check is enabled, only highlight players from different teams
+            if teamCheckEnabled and player.Team ~= game.Players.LocalPlayer.Team then
+                -- Check for existing highlight
+                local highlight = player.Character:FindFirstChild("ESPHighlight")
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Name = "ESPHighlight"
+                    highlight.Parent = player.Character
+                    highlight.Adornee = player.Character
+                    highlight.FillColor = Color3.new(1, 0, 0) -- Red color
+                    highlight.FillTransparency = 0.5
+                    highlight.OutlineColor = Color3.new(0, 0, 0) -- Black outline
+                    highlight.OutlineTransparency = 0
+                end
+            elseif not teamCheckEnabled then
+                -- If Team Check is off, show everyone
+                local highlight = player.Character:FindFirstChild("ESPHighlight")
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Name = "ESPHighlight"
+                    highlight.Parent = player.Character
+                    highlight.Adornee = player.Character
+                    highlight.FillColor = Color3.new(1, 0, 0) -- Red color
+                    highlight.FillTransparency = 0.5
+                    highlight.OutlineColor = Color3.new(0, 0, 0) -- Black outline
+                    highlight.OutlineTransparency = 0
+                end
             end
         end
     end
 end
 
--- Aimbot functionality to track and focus on the player's head
+-- Aimbot functionality to track and focus on the player's head closest to the center of the screen
 local Camera = game.Workspace.CurrentCamera
 local rightClickHeld = false
 
@@ -143,17 +167,44 @@ game:GetService("RunService").RenderStepped:Connect(function()
         highlightPlayers()
     end
 
-    -- Aimbot functionality to track the target player's head when right-click is held
-    if aimbotEnabled and rightClickHeld and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
-        local targetPosition = targetPlayer.Character.Head.Position
-        local currentPosition = Camera.CFrame.Position
-        local direction = (targetPosition - currentPosition).unit
-        local newCFrame = Camera.CFrame + direction * aimbotStrength * 10
-        Camera.CFrame = CFrame.new(newCFrame.Position, targetPosition)
+    -- Aimbot functionality to track the target player's head closest to the center of the screen
+    if aimbotEnabled and rightClickHeld then
+        local closestPlayer = nil
+        local closestDistance = math.huge
+        local screenCenter = Camera.ViewportSize / 2
+
+        -- Find the player whose head is closest to the center of the screen (crosshair)
+        for _, player in pairs(game.Players:GetPlayers()) do
+            -- Skip if player is the local player or if they are not on the team (if Team Check is enabled)
+            if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                if not teamCheckEnabled or player.Team ~= game.Players.LocalPlayer.Team then
+                    local headPosition = player.Character.Head.Position
+                    local screenPosition, onScreen = Camera:WorldToViewportPoint(headPosition)
+
+                    -- Calculate the distance between the center of the screen and the player's head position
+                    if onScreen then
+                        local distanceToCenter = (Vector2.new(screenPosition.X, screenPosition.Y) - screenCenter).Magnitude
+
+                        -- If this player is closer to the center, set them as the target
+                        if distanceToCenter < closestDistance then
+                            closestDistance = distanceToCenter
+                            closestPlayer = player
+                        end
+                    end
+                end
+            end
+        end
+
+        -- If a target is found, aimbot will snap the mouse towards the player's head
+        if closestPlayer then
+            local targetHead = closestPlayer.Character.Head.Position
+            local direction = (targetHead - Camera.CFrame.p).unit
+            Camera.CFrame = Camera.CFrame * CFrame.new(direction * aimbotStrength)
+        end
     end
 end)
 
--- Toggle ESP and Aimbot when buttons are clicked
+-- Toggle functionality for ESP, Aimbot, and Team Check
 EspToggle.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
     EspToggle.Text = espEnabled and "Toggle ESP (On)" or "Toggle ESP (Off)"
@@ -162,4 +213,9 @@ end)
 AimbotToggle.MouseButton1Click:Connect(function()
     aimbotEnabled = not aimbotEnabled
     AimbotToggle.Text = aimbotEnabled and "Toggle Aimbot (On)" or "Toggle Aimbot (Off)"
+end)
+
+TeamCheckToggle.MouseButton1Click:Connect(function()
+    teamCheckEnabled = not teamCheckEnabled
+    TeamCheckToggle.Text = teamCheckEnabled and "Team Check (On)" or "Team Check (Off)"
 end)
