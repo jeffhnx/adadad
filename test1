@@ -13,7 +13,7 @@ Frame.Parent = ScreenGui
 Frame.Size = UDim2.new(0, 300, 0, 400)
 Frame.Position = UDim2.new(0.5, -150, 0.5, -200)
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.Visible = true
+Frame.Visible = false  -- Start as hidden
 
 Title.Parent = Frame
 Title.Size = UDim2.new(0, 300, 0, 50)
@@ -58,6 +58,7 @@ local aimbotEnabled = false
 local espEnabled = false
 local aimbotSmoothness = 0.5
 local selectedKey = Enum.KeyCode.LeftControl -- Default key
+local guiVisible = false
 
 -- Functions
 local function toggleAimbot()
@@ -90,17 +91,24 @@ local function changeKey()
     end
 end
 
+local function toggleGuiVisibility()
+    guiVisible = not guiVisible
+    Frame.Visible = guiVisible
+end
+
 -- Connect GUI events
 AimbotToggle.MouseButton1Click:Connect(toggleAimbot)
 ESPToggle.MouseButton1Click:Connect(toggleESP)
 SmoothnessSlider.Changed:Connect(adjustSmoothness)
 KeyDropdown.MouseButton1Click:Connect(changeKey)
 
--- Hotkey handling
+-- Right Shift key handling to show/hide GUI
 game:GetService("UserInputService").InputBegan:Connect(function(input)
-    if input.KeyCode == selectedKey then
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        toggleGuiVisibility()
+    elseif input.KeyCode == selectedKey then
         toggleAimbot()
     end
 end)
 
-print("GUI with Aimbot, ESP, and Smoothness Slider loaded.")
+print("GUI with Aimbot, ESP, Smoothness Slider, and Right Shift toggle loaded.")
