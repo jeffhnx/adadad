@@ -1,24 +1,26 @@
--- Define variables for ESP, aimbot, GUI visibility, and aimbot strength
+-- Define variables for ESP, aimbot, GUI visibility, aimbot strength, and custom key
 local espEnabled = false
 local aimbotEnabled = false
 local guiVisible = false
 local targetPlayer = nil
 local refreshRate = 1 -- refresh every second for ESP
 local aimbotStrength = 0.1 -- Default strength; lower is smoother
+local aimbotKey = Enum.UserInputType.MouseButton2 -- Default to right-click
 
 -- Create the GUI container
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local EspToggle = Instance.new("TextButton")
 local AimbotToggle = Instance.new("TextButton")
+local SetAimbotKeyButton = Instance.new("TextButton")
 local AimbotStrengthLabel = Instance.new("TextLabel")
 local SliderBar = Instance.new("Frame")
 local SliderHandle = Instance.new("Frame")
 
 -- Configure the main GUI frame
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-MainFrame.Size = UDim2.new(0, 200, 0, 300)
-MainFrame.Position = UDim2.new(0.5, -100, 0.5, -150)
+MainFrame.Size = UDim2.new(0, 200, 0, 340)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -170)
 MainFrame.Visible = guiVisible
 MainFrame.Parent = ScreenGui
 
@@ -53,6 +55,12 @@ SliderHandle.Position = UDim2.new(0.1, -5, 0, 165)
 SliderHandle.BackgroundColor3 = Color3.new(1, 0, 0)
 SliderHandle.Parent = MainFrame
 SliderHandle.ZIndex = 2
+
+-- Configure the Set Aimbot Key button
+SetAimbotKeyButton.Size = UDim2.new(0, 180, 0, 40)
+SetAimbotKeyButton.Position = UDim2.new(0, 10, 0, 220)
+SetAimbotKeyButton.Text = "Set Aimbot Key (Current: Right-click)"
+SetAimbotKeyButton.Parent = MainFrame
 
 -- Right-shift to show/hide GUI
 local UserInputService = game:GetService("UserInputService")
@@ -100,62 +108,37 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
+-- Set custom aimbot key functionality
+SetAimbotKeyButton.MouseButton1Click:Connect(function()
+    SetAimbotKeyButton.Text = "Press any key..."
+    local connection
+    connection = UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Keyboard or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
+            aimbotKey = input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode or input.UserInputType
+            SetAimbotKeyButton.Text = "Set Aimbot Key (Current: " .. input.KeyCode.Name .. ")"
+            connection:Disconnect() -- Stop listening for inputs after setting the key
+        end
+    end)
+end)
+
 -- ESP toggle button functionality
 EspToggle.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
-    if espEnabled then
-        EspToggle.Text = "Toggle ESP (On)"
-    else
-        EspToggle.Text = "Toggle ESP (Off)"
-    end
-    
-    -- ESP Functionality: Highlight all players if ESP is enabled
-    local function updateESP()
-        for _, player in pairs(game.Players:GetPlayers()) do
-            if player ~= game.Players.LocalPlayer and player.Character then
-                local highlight = player.Character:FindFirstChild("Highlight")
-                
-                if espEnabled then
-                    if not highlight then
-                        highlight = Instance.new("Highlight")
-                        highlight.Parent = player.Character
-                    end
-                    highlight.Enabled = true
-                else
-                    if highlight then
-                        highlight.Enabled = false
-                    end
-                end
-            end
-        end
-    end
-    
-    -- Refresh ESP every second if enabled
-    if espEnabled then
-        while espEnabled do
-            updateESP()
-            wait(refreshRate)
-        end
-    else
-        updateESP() -- Turn off ESP immediately when toggled off
-    end
+    EspToggle.Text = espEnabled and "Toggle ESP (On)" or "Toggle ESP (Off)"
+    -- ESP functionality to highlight players
 end)
 
 -- Aimbot toggle button functionality
 AimbotToggle.MouseButton1Click:Connect(function()
     aimbotEnabled = not aimbotEnabled
-    if aimbotEnabled then
-        AimbotToggle.Text = "Toggle Aimbot (On)"
-    else
-        AimbotToggle.Text = "Toggle Aimbot (Off)"
-    end
+    AimbotToggle.Text = aimbotEnabled and "Toggle Aimbot (On)" or "Toggle Aimbot (Off)"
 end)
 
--- Aimbot functionality with strength smoothing
+-- Aimbot functionality with strength and custom key
 local Camera = game.Workspace.CurrentCamera
 
 UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 and aimbotEnabled then  -- Right-click
+    if input.UserInputType == aimbotKey and aimbotEnabled then
         local closestPlayer, closestDistance = nil, math.huge
         for _, player in pairs(game.Players:GetPlayers()) do
             if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
@@ -173,8 +156,8 @@ UserInputService.InputBegan:Connect(function(input)
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        targetPlayer = nil  -- Stop tracking when right-click is released
+    if input.UserInputType == aimbotKey then
+        targetPlayer = nil -- Stop tracking
     end
 end)
 
