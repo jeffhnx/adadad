@@ -41,7 +41,7 @@ end
 AimbotButton.MouseButton1Click:Connect(toggleAimbot)
 ESPButton.MouseButton1Click:Connect(toggleESP)
 
--- Aimbot Function: Lock onto the closest player's head
+-- Aimbot Function: Lock onto the closest player's head to the center of the screen
 local function aimAtPlayer(target)
     if target and target.Character and target.Character:FindFirstChild("Head") then
         local targetHead = target.Character.Head
@@ -75,15 +75,21 @@ RunService.Heartbeat:Connect(function()
     end
 
     if aimbotEnabled then
-        -- Find closest player and aim at them
+        -- Find the closest player to the center of the screen
         local closestPlayer = nil
         local closestDistance = math.huge
+        local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2) -- Center of the screen
+
         for _, player in pairs(Players:GetPlayers()) do
-            if player.Character and player.Character:FindFirstChild("Head") then
-                local distance = (Camera.CFrame.Position - player.Character.Head.Position).Magnitude
-                if distance < closestDistance then
+            if player.Character and player.Character:FindFirstChild("Head") and player ~= game.Players.LocalPlayer then
+                local headPos = player.Character.Head.Position
+                local screenPos = Camera:WorldToScreenPoint(headPos)
+                local distanceToCenter = (Vector2.new(screenPos.X, screenPos.Y) - centerScreen).Magnitude
+
+                -- Track the closest player
+                if distanceToCenter < closestDistance then
                     closestPlayer = player
-                    closestDistance = distance
+                    closestDistance = distanceToCenter
                 end
             end
         end
