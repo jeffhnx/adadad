@@ -7,20 +7,23 @@ local RunService = game:GetService("RunService")
 -- Create the GUI elements
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
+ScreenGui.Enabled = false  -- Initially hidden
 
 local AimbotButton = Instance.new("TextButton")
 AimbotButton.Parent = ScreenGui
 AimbotButton.Text = "Aimbot: OFF"
 AimbotButton.Size = UDim2.new(0, 200, 0, 50)
-AimbotButton.Position = UDim2.new(0, 0, 0, 50)
 AimbotButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 
 local ESPButton = Instance.new("TextButton")
 ESPButton.Parent = ScreenGui
 ESPButton.Text = "ESP: OFF"
 ESPButton.Size = UDim2.new(0, 200, 0, 50)
-ESPButton.Position = UDim2.new(0, 0, 0, 100)
 ESPButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+
+-- Position the GUI in the center of the screen
+AimbotButton.Position = UDim2.new(0.5, -100, 0.5, -60)  -- Center X and Y offset
+ESPButton.Position = UDim2.new(0.5, -100, 0.5, 20)      -- Center X and Y offset below AimbotButton
 
 -- Aimbot and ESP state variables
 local aimbotEnabled = false
@@ -100,10 +103,10 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Toggle GUI visibility with Left Shift key
+-- Toggle GUI visibility with Right Shift key
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.LeftShift then
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.RightShift then
         ScreenGui.Enabled = not ScreenGui.Enabled
     end
 end)
