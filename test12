@@ -1,5 +1,6 @@
 -- Create a GUI
 local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player.PlayerGui
 
@@ -30,12 +31,10 @@ local function toggleAimbot()
     if aimbotEnabled then
         toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Red for enabled
         toggleButton.Text = "Aimbot Enabled"
-        -- Add your aimbot activation code here
         print("Aimbot Enabled")
     else
         toggleButton.BackgroundColor3 = Color3.fromRGB(0, 128, 0)  -- Green for disabled
         toggleButton.Text = "Aimbot Disabled"
-        -- Add your aimbot deactivation code here
         print("Aimbot Disabled")
     end
 end
@@ -56,4 +55,52 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
         -- Toggle the visibility of the entire GUI
         screenGui.Enabled = not screenGui.Enabled
     end
+end)
+
+-- Function to find the closest player to the center of the screen
+local function getClosestPlayer()
+    local closestPlayer = nil
+    local shortestDistance = math.huge  -- Start with a very large distance
+
+    -- Loop through all players
+    for _, target in pairs(game.Players:GetPlayers()) do
+        if target ~= player and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local targetPosition = target.Character.HumanoidRootPart.Position
+            local screenPosition = game:GetService("Workspace").CurrentCamera:WorldToScreenPoint(targetPosition)
+
+            -- Calculate the distance from the center of the screen (mouse position)
+            local screenCenter = Vector2.new(mouse.X, mouse.Y)
+            local distance = (screenPosition - screenCenter).Magnitude
+
+            -- Find the closest player
+            if distance < shortestDistance then
+                shortestDistance = distance
+                closestPlayer = target
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
+-- Function to aim at the closest player
+local function aimAtClosestPlayer()
+    if aimbotEnabled then
+        local closestPlayer = getClosestPlayer()
+
+        if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local targetPosition = closestPlayer.Character.HumanoidRootPart.Position
+            local camera = game:GetService("Workspace").CurrentCamera
+            local screenPosition = camera:WorldToScreenPoint(targetPosition)
+
+            -- Aim at the target's position (move the mouse to the target's screen position)
+            -- You can adjust the mouse position or use an aimbot method here
+            mouse.Move = Vector2.new(screenPosition.X, screenPosition.Y)
+        end
+    end
+end
+
+-- Continuously aim at the closest player when aimbot is enabled
+game:GetService("RunService").Heartbeat:Connect(function()
+    aimAtClosestPlayer()
 end)
