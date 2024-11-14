@@ -1,48 +1,125 @@
--- Assuming you are working with a Roblox-like game or any 3D environment
+-- GUI Setup
+
 local player = game.Players.LocalPlayer
 local mouse = player:GetMouse() -- Gets the player's mouse object
 local camera = game.Workspace.CurrentCamera
 
--- Function to get the player's head position
-function getPlayerHeadPosition(targetPlayer)
+-- Create the GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.IgnoreGuiInset = true
+
+-- Frame for the GUI
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 500)
+mainFrame.Position = UDim2.new(0, 10, 0, 10)
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mainFrame.BackgroundTransparency = 0.5
+mainFrame.Parent = screenGui
+
+-- Title
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Text = "Aimbot Control"
+titleLabel.Size = UDim2.new(0, 300, 0, 40)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 24
+titleLabel.TextAlign = Enum.TextXAlignment.Center
+titleLabel.Parent = mainFrame
+
+-- Toggle Button for Aimbot
+local aimbotToggle = Instance.new("TextButton")
+aimbotToggle.Size = UDim2.new(0, 280, 0, 40)
+aimbotToggle.Position = UDim2.new(0, 10, 0, 50)
+aimbotToggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+aimbotToggle.Text = "Toggle Aimbot"
+aimbotToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimbotToggle.TextSize = 20
+aimbotToggle.Parent = mainFrame
+
+-- Toggle Button for ESP
+local espToggle = Instance.new("TextButton")
+espToggle.Size = UDim2.new(0, 280, 0, 40)
+espToggle.Position = UDim2.new(0, 10, 0, 100)
+espToggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+espToggle.Text = "Toggle ESP"
+espToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+espToggle.TextSize = 20
+espToggle.Parent = mainFrame
+
+-- Aimbot Strength Slider
+local sliderFrame = Instance.new("Frame")
+sliderFrame.Size = UDim2.new(0, 280, 0, 40)
+sliderFrame.Position = UDim2.new(0, 10, 0, 150)
+sliderFrame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+sliderFrame.Parent = mainFrame
+
+local sliderBar = Instance.new("Frame")
+sliderBar.Size = UDim2.new(0, 0, 1, 0)
+sliderBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+sliderBar.Parent = sliderFrame
+
+local sliderButton = Instance.new("TextButton")
+sliderButton.Size = UDim2.new(0, 20, 1, 0)
+sliderButton.Position = UDim2.new(0, 0, 0, 0)
+sliderButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+sliderButton.Text = ""
+sliderButton.Parent = sliderFrame
+
+local aimbotStrength = 0 -- Default strength
+
+-- Function to update the slider value
+sliderButton.MouseMoved:Connect(function(x, y)
+    local relativeX = x - sliderFrame.AbsolutePosition.X
+    local clampedX = math.clamp(relativeX, 0, sliderFrame.AbsoluteSize.X)
+    sliderBar.Size = UDim2.new(0, clampedX, 1, 0)
+    aimbotStrength = clampedX / sliderFrame.AbsoluteSize.X
+end)
+
+-- Close GUI with RightShift key
+local guiVisible = true
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        guiVisible = not guiVisible
+        screenGui.Enabled = guiVisible
+    end
+end)
+
+-- Functions for Aimbot and ESP
+local function getPlayerHeadPosition(targetPlayer)
     if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
         return targetPlayer.Character.Head.Position
     end
     return nil
 end
 
--- Function to calculate the angle between two points (from the player's camera to the target's head)
-function calculateAimAngle(fromPosition, toPosition)
+local function calculateAimAngle(fromPosition, toPosition)
     local direction = (toPosition - fromPosition).unit
     local angleX = math.atan2(direction.Y, direction.Z)
     local angleY = math.atan2(direction.X, direction.Z)
     return angleX, angleY
 end
 
--- Function to lock on to the target's head
-function aimAtHead(targetPlayer)
+local function aimAtHead(targetPlayer)
     local headPos = getPlayerHeadPosition(targetPlayer)
     if headPos then
-        -- Get the player's position and the camera's position
         local playerPos = player.Character.HumanoidRootPart.Position
         local cameraPos = camera.CFrame.Position
         
         -- Calculate the angle to aim at the head
         local angleX, angleY = calculateAimAngle(cameraPos, headPos)
 
-        -- Apply the calculated angles to the camera's orientation (example)
-        -- In Roblox, the camera orientation would typically be set via the CameraSubject or CFrame
-        -- For simplicity, we're assuming this is done via CFrame manipulation
-        camera.CFrame = CFrame.new(cameraPos, headPos)  -- Smooth aiming can be added here
+        -- Apply the calculated angles to the camera's orientation
+        camera.CFrame = CFrame.new(cameraPos, headPos) 
     end
 end
 
--- Example: Targeting the nearest player
-game:GetService("RunService").Heartbeat:Connect(function()
+-- Find and aim at the nearest player with the Aimbot toggle
+aimbotToggle.MouseButton1Click:Connect(function()
     local nearestPlayer = nil
     local shortestDistance = math.huge
 
-    -- Find the nearest player (excluding the local player)
     for _, targetPlayer in ipairs(game.Players:GetPlayers()) do
         if targetPlayer ~= player and targetPlayer.Character then
             local headPos = getPlayerHeadPosition(targetPlayer)
@@ -56,8 +133,13 @@ game:GetService("RunService").Heartbeat:Connect(function()
         end
     end
     
-    -- If a player is found, aim at their head
     if nearestPlayer then
         aimAtHead(nearestPlayer)
     end
+end)
+
+-- ESP Toggle Logic
+espToggle.MouseButton1Click:Connect(function()
+    -- Implement ESP logic here
+    print("ESP toggled")
 end)
