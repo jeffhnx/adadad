@@ -30,6 +30,7 @@ ScreenGui.Enabled = false  -- Initially hidden
 local aimbotEnabled = false
 local espEnabled = false
 local aimbotTarget = nil  -- To store the target player while Right Click is held
+local espPlayers = {}
 
 local function toggleAimbot()
     aimbotEnabled = not aimbotEnabled
@@ -46,27 +47,36 @@ end
 AimbotButton.MouseButton1Click:Connect(toggleAimbot)
 ESPButton.MouseButton1Click:Connect(toggleESP)
 
--- Aimbot Function: Lock onto the closest player's head to the center of the screen
+-- Aimbot Function: Lock onto the closest player's head to the center of the screen, adjusted higher
 local function aimAtPlayer(target)
     if target and target.Character and target.Character:FindFirstChild("Head") then
         local targetHead = target.Character.Head
-        -- Calculate the direction from the camera to the player's head
-        local direction = (targetHead.Position - Camera.CFrame.Position).unit
-        -- Set the camera's CFrame to look at the player's head
-        Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHead.Position)
+        local aimPosition = targetHead.Position + Vector3.new(0, 2, 0)  -- Adjust to aim slightly above the head
+        -- Calculate the direction from the camera to the target's adjusted aim position
+        local direction = (aimPosition - Camera.CFrame.Position).unit
+        -- Set the camera's CFrame to look at the aimPosition (slightly above the head)
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, aimPosition)
     end
 end
 
 -- ESP Function: Highlight players and refresh every second
 local function highlightPlayers()
+    -- Clear previous ESP players
+    espPlayers = {}
+    
     for _, player in pairs(Players:GetPlayers()) do
         if player.Character and player.Character:FindFirstChild("Head") then
             local color = player.Team == game.Players.LocalPlayer.Team and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
             -- Create or update ESP for this player
-            -- Example: Draw a box around the player's head (this part can be customized for your game)
             local headPos = player.Character.Head.Position
             local screenPos = Camera:WorldToScreenPoint(headPos)
-            -- You can draw a GUI element here or use a 3D ESP, depending on your game's engine.
+            
+            -- Add the player to the ESP list for rendering purposes
+            table.insert(espPlayers, {
+                player = player,
+                screenPos = screenPos,
+                color = color,
+            })
         end
     end
 end
@@ -130,5 +140,34 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.UserInputType == Enum.UserInputType.MouseButton2 then  -- Right Mouse Button (MouseButton2)
         aimbotTarget = nil  -- Stop locking onto any player
+    end
+end)
+
+-- Highlight ESP when ESP button is clicked
+ESPButton.MouseButton1Click:Connect(function()
+    highlightPlayers()  -- Refresh ESP list of players
+end)
+
+-- Draw ESP for all players in the game
+RunService.Heartbeat:Connect(function()
+    if espEnabled then
+        for _, espPlayer in pairs(espPlayers) do
+            local player = espPlayer.player
+            local screenPos = espPlayer.screenPos
+            local color = espPlayer.color
+            
+            -- You can add ESP drawing here. For example, display a circle or box around each player.
+            -- This is just a simple representation:
+            local espLabel = Instance.new("TextLabel")
+            espLabel.Text = player.Name
+            espLabel.Size = UDim2.new(0, 50, 0, 50)
+            espLabel.Position = UDim2.new(0, screenPos.X - 25, 0, screenPos.Y - 25)  -- Center the label
+            espLabel.BackgroundTransparency = 1
+            espLabel.TextColor3 = color
+            espLabel.Parent = ScreenGui
+            
+            -- Remove the ESP label after a short duration to avoid cluttering
+            game.Debris:AddItem(espLabel, 0.1)
+        end
     end
 end)
