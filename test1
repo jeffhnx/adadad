@@ -125,7 +125,6 @@ end)
 EspToggle.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
     EspToggle.Text = espEnabled and "Toggle ESP (On)" or "Toggle ESP (Off)"
-    -- ESP functionality to highlight players
 end)
 
 -- Aimbot toggle button functionality
@@ -133,6 +132,24 @@ AimbotToggle.MouseButton1Click:Connect(function()
     aimbotEnabled = not aimbotEnabled
     AimbotToggle.Text = aimbotEnabled and "Toggle Aimbot (On)" or "Toggle Aimbot (Off)"
 end)
+
+-- ESP function to highlight players
+local function highlightPlayers()
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            -- Highlight the player (change appearance, for example)
+            local highlight = player.Character:FindFirstChild("ESPHighlight")
+            if not highlight then
+                highlight = Instance.new("Highlight")
+                highlight.Name = "ESPHighlight"
+                highlight.Parent = player.Character
+                highlight.Adornee = player.Character:FindFirstChild("Head")
+                highlight.FillColor = Color3.new(1, 0, 0) -- Red color
+                highlight.FillTransparency = 0.5
+            end
+        end
+    end
+end
 
 -- Aimbot functionality with strength and custom key
 local Camera = game.Workspace.CurrentCamera
@@ -162,10 +179,20 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 game:GetService("RunService").RenderStepped:Connect(function()
-    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
-        local targetPosition = targetPlayer.Character.Head.Position
-        local direction = (targetPosition - Camera.CFrame.Position).Unit
-        local smoothCFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + direction), aimbotStrength)
-        Camera.CFrame = smoothCFrame
+    -- Update ESP every second
+    if espEnabled then
+        highlightPlayers()
+    end
+    
+    -- Aimbot tracking
+    if aimbotEnabled and targetPlayer then
+        if targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
+            local targetHead = targetPlayer.Character.Head
+            local targetPosition = targetHead.Position
+            local currentPosition = Camera.CFrame.Position
+            local direction = (targetPosition - currentPosition).unit
+            local newCFrame = Camera.CFrame + direction * aimbotStrength * 10
+            Camera.CFrame = CFrame.new(newCFrame.Position, targetPosition)
+        end
     end
 end)
