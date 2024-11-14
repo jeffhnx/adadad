@@ -1,26 +1,24 @@
--- Define variables for ESP, aimbot, GUI visibility, aimbot strength, and custom key
+-- Define variables for ESP, aimbot, GUI visibility, aimbot strength
 local espEnabled = false
 local aimbotEnabled = false
 local guiVisible = false
 local targetPlayer = nil
 local refreshRate = 1 -- refresh every second for ESP
 local aimbotStrength = 0.1 -- Default strength; lower is smoother
-local aimbotKey = Enum.UserInputType.MouseButton2 -- Default to right-click
 
 -- Create the GUI container
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local EspToggle = Instance.new("TextButton")
 local AimbotToggle = Instance.new("TextButton")
-local SetAimbotKeyButton = Instance.new("TextButton")
 local AimbotStrengthLabel = Instance.new("TextLabel")
 local SliderBar = Instance.new("Frame")
 local SliderHandle = Instance.new("Frame")
 
 -- Configure the main GUI frame
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-MainFrame.Size = UDim2.new(0, 200, 0, 340)
-MainFrame.Position = UDim2.new(0.5, -100, 0.5, -170)
+MainFrame.Size = UDim2.new(0, 200, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -150)
 MainFrame.Visible = guiVisible
 MainFrame.Parent = ScreenGui
 
@@ -55,12 +53,6 @@ SliderHandle.Position = UDim2.new(0.1, -5, 0, 165)
 SliderHandle.BackgroundColor3 = Color3.new(1, 0, 0)
 SliderHandle.Parent = MainFrame
 SliderHandle.ZIndex = 2
-
--- Configure the Set Aimbot Key button
-SetAimbotKeyButton.Size = UDim2.new(0, 180, 0, 40)
-SetAimbotKeyButton.Position = UDim2.new(0, 10, 0, 220)
-SetAimbotKeyButton.Text = "Set Aimbot Key (Current: Right-click)"
-SetAimbotKeyButton.Parent = MainFrame
 
 -- Right-shift to show/hide GUI
 local UserInputService = game:GetService("UserInputService")
@@ -108,19 +100,6 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Set custom aimbot key functionality
-SetAimbotKeyButton.MouseButton1Click:Connect(function()
-    SetAimbotKeyButton.Text = "Press any key..."
-    local connection
-    connection = UserInputService.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Keyboard or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
-            aimbotKey = input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode or input.UserInputType
-            SetAimbotKeyButton.Text = "Set Aimbot Key (Current: " .. (input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode.Name or input.UserInputType.Name) .. ")"
-            connection:Disconnect() -- Stop listening for inputs after setting the key
-        end
-    end)
-end)
-
 -- ESP function to highlight players
 local function highlightPlayers()
     for _, player in pairs(game.Players:GetPlayers()) do
@@ -141,29 +120,19 @@ local function highlightPlayers()
     end
 end
 
--- Aimbot functionality with strength and custom key
+-- Aimbot functionality to track and focus on the player's head
 local Camera = game.Workspace.CurrentCamera
+local rightClickHeld = false
 
 UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == aimbotKey and aimbotEnabled then
-        local closestPlayer, closestDistance = nil, math.huge
-        for _, player in pairs(game.Players:GetPlayers()) do
-            if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                local headPosition = player.Character.Head.Position
-                local screenPoint = Camera:WorldToScreenPoint(headPosition)
-                local distanceFromCursor = (Vector2.new(screenPoint.X, screenPoint.Y) - UserInputService:GetMouseLocation()).Magnitude
-                if distanceFromCursor < closestDistance then
-                    closestPlayer = player
-                    closestDistance = distanceFromCursor
-                end
-            end
-        end
-        targetPlayer = closestPlayer
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right-click for aimbot
+        rightClickHeld = true
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == aimbotKey then
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right-click released
+        rightClickHeld = false
         targetPlayer = nil -- Stop tracking
     end
 end)
@@ -174,8 +143,8 @@ game:GetService("RunService").RenderStepped:Connect(function()
         highlightPlayers()
     end
 
-    -- Aimbot tracks target
-    if aimbotEnabled and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
+    -- Aimbot functionality to track the target player's head when right-click is held
+    if aimbotEnabled and rightClickHeld and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
         local targetPosition = targetPlayer.Character.Head.Position
         local currentPosition = Camera.CFrame.Position
         local direction = (targetPosition - currentPosition).unit
