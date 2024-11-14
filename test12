@@ -1,0 +1,132 @@
+-- Services
+local Players = game:GetService("Players")
+local Camera = game.Workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+
+-- Variables
+local espEnabled = false
+local aimbotEnabled = false
+local teamCheckEnabled = false
+local rightClickHeld = false
+local aimbotStrength = 0.2 -- The strength of the aimbot
+local smoothSpeed = 0.2 -- Smooth speed for the aimbot
+local screenCenter = Camera.ViewportSize / 2
+
+-- GUI setup (for this example, you should add buttons in your GUI manually in the studio)
+local EspToggle = script.Parent:WaitForChild("EspToggle") -- Assuming the button is named EspToggle
+local AimbotToggle = script.Parent:WaitForChild("AimbotToggle") -- Assuming the button is named AimbotToggle
+local TeamCheckToggle = script.Parent:WaitForChild("TeamCheckToggle") -- Assuming the button is named TeamCheckToggle
+
+-- Functions
+local function highlightPlayers()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character and player.Character:FindFirstChild("Head") then
+            local headPosition = player.Character.Head.Position
+            local screenPosition, onScreen = Camera:WorldToViewportPoint(headPosition)
+            
+            if onScreen then
+                local distanceToCenter = (Vector2.new(screenPosition.X, screenPosition.Y) - screenCenter).Magnitude
+
+                -- Check for team
+                local teamColor = teamCheckEnabled and player.Team == Players.LocalPlayer.Team and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+
+                -- Highlight the player head with a colored circle
+                local highlight = Instance.new("BillboardGui", player.Character)
+                highlight.Size = UDim2.new(0, 5, 0, 5) -- Adjust size for visibility
+                highlight.Adornee = player.Character.Head
+                highlight.StudsOffset = Vector3.new(0, 1, 0) -- Slightly above head
+                highlight.AlwaysOnTop = true
+                highlight.Enabled = espEnabled
+
+                local highlightFrame = Instance.new("Frame", highlight)
+                highlightFrame.Size = UDim2.new(1, 0, 1, 0)
+                highlightFrame.BackgroundColor3 = teamColor
+                highlightFrame.BackgroundTransparency = 0.5
+            end
+        end
+    end
+end
+
+-- Aimbot logic
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right-click for aimbot
+        rightClickHeld = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right-click released
+        rightClickHeld = false
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    -- ESP updates every second
+    if espEnabled then
+        highlightPlayers()
+    end
+
+    -- Aimbot functionality to track the target player's head closest to the center of the screen
+    if aimbotEnabled and rightClickHeld then
+        local closestPlayer = nil
+        local closestDistance = math.huge
+
+        -- Find the player whose head is closest to the center of the screen (crosshair)
+        for _, player in pairs(Players:GetPlayers()) do
+            -- Skip if player is the local player or if they are not on the team (if Team Check is enabled)
+            if player ~= Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                if not teamCheckEnabled or player.Team ~= Players.LocalPlayer.Team then
+                    local headPosition = player.Character.Head.Position
+                    local screenPosition, onScreen = Camera:WorldToViewportPoint(headPosition)
+
+                    -- Calculate the distance between the center of the screen and the player's head position
+                    if onScreen then
+                        local distanceToCenter = (Vector2.new(screenPosition.X, screenPosition.Y) - screenCenter).Magnitude
+
+                        -- If this player is closer to the center, set them as the target
+                        if distanceToCenter < closestDistance then
+                            closestDistance = distanceToCenter
+                            closestPlayer = player
+                        end
+                    end
+                end
+            end
+        end
+
+        -- If a target is found, aimbot will track the player's head smoothly
+        if closestPlayer then
+            local targetHead = closestPlayer.Character.Head.Position
+            local screenPosition, onScreen = Camera:WorldToViewportPoint(targetHead)
+            if onScreen then
+                local mousePosition = Vector2.new(screenPosition.X, screenPosition.Y)
+
+                -- Calculate smooth mouse movement to the player's head
+                local direction = mousePosition - screenCenter
+                local targetMousePosition = screenCenter + direction * aimbotStrength
+                local mouseMovement = (targetMousePosition - screenCenter) * smoothSpeed
+                local newMousePosition = screenCenter + mouseMovement
+
+                -- Move the mouse smoothly towards the target's head
+                game:GetService("VirtualUser"):Click(newMousePosition.X, newMousePosition.Y)
+            end
+        end
+    end
+end)
+
+-- Toggle functionality for ESP, Aimbot, and Team Check
+EspToggle.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    EspToggle.Text = espEnabled and "Toggle ESP (On)" or "Toggle ESP (Off)"
+end)
+
+AimbotToggle.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    AimbotToggle.Text = aimbotEnabled and "Toggle Aimbot (On)" or "Toggle Aimbot (Off)"
+end)
+
+TeamCheckToggle.MouseButton1Click:Connect(function()
+    teamCheckEnabled = not teamCheckEnabled
+    TeamCheckToggle.Text = teamCheckEnabled and "Team Check (On)" or "Team Check (Off)"
+end)
