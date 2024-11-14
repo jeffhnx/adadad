@@ -29,6 +29,7 @@ ScreenGui.Enabled = false  -- Initially hidden
 -- Aimbot and ESP state variables
 local aimbotEnabled = false
 local espEnabled = false
+local aimbotTarget = nil  -- To store the target player while Right Click is held
 
 local function toggleAimbot()
     aimbotEnabled = not aimbotEnabled
@@ -78,29 +79,8 @@ RunService.Heartbeat:Connect(function()
         lastESPUpdate = tick()
     end
 
-    if aimbotEnabled then
-        -- Find the closest player to the center of the screen
-        local closestPlayer = nil
-        local closestDistance = math.huge
-        local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2) -- Center of the screen
-
-        for _, player in pairs(Players:GetPlayers()) do
-            if player.Character and player.Character:FindFirstChild("Head") and player ~= game.Players.LocalPlayer then
-                local headPos = player.Character.Head.Position
-                local screenPos = Camera:WorldToScreenPoint(headPos)
-                local distanceToCenter = (Vector2.new(screenPos.X, screenPos.Y) - centerScreen).Magnitude
-
-                -- Track the closest player
-                if distanceToCenter < closestDistance then
-                    closestPlayer = player
-                    closestDistance = distanceToCenter
-                end
-            end
-        end
-
-        if closestPlayer then
-            aimAtPlayer(closestPlayer)
-        end
+    if aimbotEnabled and aimbotTarget then
+        aimAtPlayer(aimbotTarget)  -- Aim at the stored target while Right Click is held
     end
 end)
 
@@ -109,5 +89,46 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.RightShift then
         ScreenGui.Enabled = not ScreenGui.Enabled
+    end
+end)
+
+-- Detect Right Mouse Button press and hold to lock aimbot onto closest player
+local function getClosestPlayer()
+    local closestPlayer = nil
+    local closestDistance = math.huge
+    local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2) -- Center of the screen
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character and player.Character:FindFirstChild("Head") and player ~= game.Players.LocalPlayer then
+            local headPos = player.Character.Head.Position
+            local screenPos = Camera:WorldToScreenPoint(headPos)
+            local distanceToCenter = (Vector2.new(screenPos.X, screenPos.Y) - centerScreen).Magnitude
+
+            -- Track the closest player
+            if distanceToCenter < closestDistance then
+                closestPlayer = player
+                closestDistance = distanceToCenter
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
+-- Right Mouse Button Hold to lock aimbot onto the closest player
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then  -- Right Mouse Button (MouseButton2)
+        if aimbotEnabled then
+            aimbotTarget = getClosestPlayer()  -- Lock aimbot onto closest player
+        end
+    end
+end)
+
+-- Right Mouse Button Release to stop locking aimbot
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then  -- Right Mouse Button (MouseButton2)
+        aimbotTarget = nil  -- Stop locking onto any player
     end
 end)
