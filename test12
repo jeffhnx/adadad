@@ -115,7 +115,7 @@ SetAimbotKeyButton.MouseButton1Click:Connect(function()
     connection = UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Keyboard or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
             aimbotKey = input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode or input.UserInputType
-            SetAimbotKeyButton.Text = "Set Aimbot Key (Current: " .. input.KeyCode.Name .. ")"
+            SetAimbotKeyButton.Text = "Set Aimbot Key (Current: " .. (input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode.Name or input.UserInputType.Name) .. ")"
             connection:Disconnect() -- Stop listening for inputs after setting the key
         end
     end)
@@ -146,6 +146,8 @@ local function highlightPlayers()
                 highlight.Adornee = player.Character:FindFirstChild("Head")
                 highlight.FillColor = Color3.new(1, 0, 0) -- Red color
                 highlight.FillTransparency = 0.5
+                highlight.OutlineColor = Color3.new(0, 0, 0) -- Black outline
+                highlight.OutlineTransparency = 0
             end
         end
     end
@@ -179,20 +181,17 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 game:GetService("RunService").RenderStepped:Connect(function()
-    -- Update ESP every second
+    -- ESP updates every second
     if espEnabled then
         highlightPlayers()
     end
-    
-    -- Aimbot tracking
-    if aimbotEnabled and targetPlayer then
-        if targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
-            local targetHead = targetPlayer.Character.Head
-            local targetPosition = targetHead.Position
-            local currentPosition = Camera.CFrame.Position
-            local direction = (targetPosition - currentPosition).unit
-            local newCFrame = Camera.CFrame + direction * aimbotStrength * 10
-            Camera.CFrame = CFrame.new(newCFrame.Position, targetPosition)
-        end
+
+    -- Aimbot tracks target
+    if aimbotEnabled and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
+        local targetPosition = targetPlayer.Character.Head.Position
+        local currentPosition = Camera.CFrame.Position
+        local direction = (targetPosition - currentPosition).unit
+        local newCFrame = Camera.CFrame + direction * aimbotStrength * 10
+        Camera.CFrame = CFrame.new(newCFrame.Position, targetPosition)
     end
 end)
