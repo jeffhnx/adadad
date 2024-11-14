@@ -8,6 +8,7 @@ local camera = game.Workspace.CurrentCamera
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
 screenGui.IgnoreGuiInset = true
+screenGui.Enabled = true  -- Make sure the GUI is enabled on startup
 
 -- Frame for the GUI (centered)
 local mainFrame = Instance.new("Frame")
