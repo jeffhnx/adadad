@@ -5,6 +5,12 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 
+-- GUI setup (assuming the buttons are named EspToggle, AimbotToggle, and TeamCheckToggle)
+local ScreenGui = script.Parent:WaitForChild("ScreenGui")
+local EspToggle = ScreenGui:WaitForChild("EspToggle")
+local AimbotToggle = ScreenGui:WaitForChild("AimbotToggle")
+local TeamCheckToggle = ScreenGui:WaitForChild("TeamCheckToggle")
+
 -- Variables
 local espEnabled = false
 local aimbotEnabled = false
@@ -14,12 +20,7 @@ local aimbotStrength = 0.2 -- The strength of the aimbot
 local smoothSpeed = 0.2 -- Smooth speed for the aimbot
 local screenCenter = Camera.ViewportSize / 2
 
--- GUI setup (for this example, you should add buttons in your GUI manually in the studio)
-local EspToggle = script.Parent:WaitForChild("EspToggle") -- Assuming the button is named EspToggle
-local AimbotToggle = script.Parent:WaitForChild("AimbotToggle") -- Assuming the button is named AimbotToggle
-local TeamCheckToggle = script.Parent:WaitForChild("TeamCheckToggle") -- Assuming the button is named TeamCheckToggle
-
--- Functions
+-- Functions for ESP
 local function highlightPlayers()
     for _, player in pairs(Players:GetPlayers()) do
         if player.Character and player.Character:FindFirstChild("Head") then
