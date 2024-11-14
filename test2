@@ -100,7 +100,56 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Add basic ESP and aimbot functions here, as previously discussed
+-- ESP toggle button functionality
+EspToggle.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    if espEnabled then
+        EspToggle.Text = "Toggle ESP (On)"
+    else
+        EspToggle.Text = "Toggle ESP (Off)"
+    end
+    
+    -- ESP Functionality: Highlight all players if ESP is enabled
+    local function updateESP()
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer and player.Character then
+                local highlight = player.Character:FindFirstChild("Highlight")
+                
+                if espEnabled then
+                    if not highlight then
+                        highlight = Instance.new("Highlight")
+                        highlight.Parent = player.Character
+                    end
+                    highlight.Enabled = true
+                else
+                    if highlight then
+                        highlight.Enabled = false
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Refresh ESP every second if enabled
+    if espEnabled then
+        while espEnabled do
+            updateESP()
+            wait(refreshRate)
+        end
+    else
+        updateESP() -- Turn off ESP immediately when toggled off
+    end
+end)
+
+-- Aimbot toggle button functionality
+AimbotToggle.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    if aimbotEnabled then
+        AimbotToggle.Text = "Toggle Aimbot (On)"
+    else
+        AimbotToggle.Text = "Toggle Aimbot (Off)"
+    end
+end)
 
 -- Aimbot functionality with strength smoothing
 local Camera = game.Workspace.CurrentCamera
