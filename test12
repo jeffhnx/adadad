@@ -9,7 +9,7 @@ local LocalPlayer = Players.LocalPlayer
 local AimbotEnabled = true
 local ESPEnabled = true
 local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
-local LeftControlHeld = false
+local RightClickHeld = false
 local refreshRate = 1 -- seconds
 
 --// ESP Function
@@ -38,7 +38,7 @@ end
 
 --// Aimbot Function
 local function Aimbot()
-    if LeftControlHeld and AimbotEnabled then
+    if RightClickHeld and AimbotEnabled then
         local closestPlayer = nil
         local closestDistance = math.huge
 
@@ -71,16 +71,16 @@ local function Aimbot()
     end
 end
 
---// User Input for Left Control Key
+--// User Input for Right Click
 UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.LeftControl then
-        LeftControlHeld = true -- Left control held to enable aimbot
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        RightClickHeld = true -- Right click held to enable aimbot
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.LeftControl then
-        LeftControlHeld = false -- Release left control to disable aimbot
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        RightClickHeld = false -- Release right click to disable aimbot
     end
 end)
 
