@@ -121,29 +121,17 @@ SetAimbotKeyButton.MouseButton1Click:Connect(function()
     end)
 end)
 
--- ESP toggle button functionality
-EspToggle.MouseButton1Click:Connect(function()
-    espEnabled = not espEnabled
-    EspToggle.Text = espEnabled and "Toggle ESP (On)" or "Toggle ESP (Off)"
-end)
-
--- Aimbot toggle button functionality
-AimbotToggle.MouseButton1Click:Connect(function()
-    aimbotEnabled = not aimbotEnabled
-    AimbotToggle.Text = aimbotEnabled and "Toggle Aimbot (On)" or "Toggle Aimbot (Off)"
-end)
-
 -- ESP function to highlight players
 local function highlightPlayers()
     for _, player in pairs(game.Players:GetPlayers()) do
-        if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-            -- Highlight the player (change appearance, for example)
+        if player ~= game.Players.LocalPlayer and player.Character then
+            -- Check for existing highlight
             local highlight = player.Character:FindFirstChild("ESPHighlight")
             if not highlight then
                 highlight = Instance.new("Highlight")
                 highlight.Name = "ESPHighlight"
                 highlight.Parent = player.Character
-                highlight.Adornee = player.Character:FindFirstChild("Head")
+                highlight.Adornee = player.Character
                 highlight.FillColor = Color3.new(1, 0, 0) -- Red color
                 highlight.FillTransparency = 0.5
                 highlight.OutlineColor = Color3.new(0, 0, 0) -- Black outline
@@ -194,4 +182,15 @@ game:GetService("RunService").RenderStepped:Connect(function()
         local newCFrame = Camera.CFrame + direction * aimbotStrength * 10
         Camera.CFrame = CFrame.new(newCFrame.Position, targetPosition)
     end
+end)
+
+-- Toggle ESP and Aimbot when buttons are clicked
+EspToggle.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    EspToggle.Text = espEnabled and "Toggle ESP (On)" or "Toggle ESP (Off)"
+end)
+
+AimbotToggle.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    AimbotToggle.Text = aimbotEnabled and "Toggle Aimbot (On)" or "Toggle Aimbot (Off)"
 end)
