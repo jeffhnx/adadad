@@ -1,0 +1,106 @@
+-- Initialize GUI Library (Assuming you're using a GUI framework compatible with Lua)
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local AimbotToggle = Instance.new("TextButton")
+local ESPToggle = Instance.new("TextButton")
+local SmoothnessSlider = Instance.new("Slider")
+local KeyDropdown = Instance.new("TextButton")
+
+-- GUI properties
+ScreenGui.Parent = game.CoreGui
+Frame.Parent = ScreenGui
+Frame.Size = UDim2.new(0, 300, 0, 400)
+Frame.Position = UDim2.new(0.5, -150, 0.5, -200)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.Visible = true
+
+Title.Parent = Frame
+Title.Size = UDim2.new(0, 300, 0, 50)
+Title.Position = UDim2.new(0, 0, 0, 0)
+Title.Text = "Game GUI"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundTransparency = 1
+
+-- Aimbot Toggle
+AimbotToggle.Parent = Frame
+AimbotToggle.Size = UDim2.new(0, 200, 0, 50)
+AimbotToggle.Position = UDim2.new(0, 50, 0, 60)
+AimbotToggle.Text = "Toggle Aimbot"
+AimbotToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+AimbotToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+
+-- ESP Toggle
+ESPToggle.Parent = Frame
+ESPToggle.Size = UDim2.new(0, 200, 0, 50)
+ESPToggle.Position = UDim2.new(0, 50, 0, 120)
+ESPToggle.Text = "Toggle ESP"
+ESPToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+ESPToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+
+-- Smoothness Slider
+SmoothnessSlider.Parent = Frame
+SmoothnessSlider.Size = UDim2.new(0, 200, 0, 50)
+SmoothnessSlider.Position = UDim2.new(0, 50, 0, 180)
+SmoothnessSlider.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+SmoothnessSlider.Value = 0.5 -- Starting value
+
+-- Key Dropdown (for selecting custom key)
+KeyDropdown.Parent = Frame
+KeyDropdown.Size = UDim2.new(0, 200, 0, 50)
+KeyDropdown.Position = UDim2.new(0, 50, 0, 240)
+KeyDropdown.Text = "Select Key: Left Ctrl"
+KeyDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyDropdown.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+
+-- Variables
+local aimbotEnabled = false
+local espEnabled = false
+local aimbotSmoothness = 0.5
+local selectedKey = Enum.KeyCode.LeftControl -- Default key
+
+-- Functions
+local function toggleAimbot()
+    aimbotEnabled = not aimbotEnabled
+    AimbotToggle.Text = aimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
+    -- Code for aimbot functionality goes here
+end
+
+local function toggleESP()
+    espEnabled = not espEnabled
+    ESPToggle.Text = espEnabled and "ESP: ON" or "ESP: OFF"
+    -- Code for ESP functionality goes here
+end
+
+local function adjustSmoothness(value)
+    aimbotSmoothness = value
+    -- Code to adjust aimbot smoothness
+end
+
+local function changeKey()
+    if selectedKey == Enum.KeyCode.LeftControl then
+        selectedKey = Enum.KeyCode.ButtonR2 -- Right Click as example
+        KeyDropdown.Text = "Select Key: Right Click"
+    elseif selectedKey == Enum.KeyCode.ButtonR2 then
+        selectedKey = Enum.KeyCode.ButtonL2 -- Left Click as example
+        KeyDropdown.Text = "Select Key: Left Click"
+    else
+        selectedKey = Enum.KeyCode.LeftControl
+        KeyDropdown.Text = "Select Key: Left Ctrl"
+    end
+end
+
+-- Connect GUI events
+AimbotToggle.MouseButton1Click:Connect(toggleAimbot)
+ESPToggle.MouseButton1Click:Connect(toggleESP)
+SmoothnessSlider.Changed:Connect(adjustSmoothness)
+KeyDropdown.MouseButton1Click:Connect(changeKey)
+
+-- Hotkey handling
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == selectedKey then
+        toggleAimbot()
+    end
+end)
+
+print("GUI with Aimbot, ESP, and Smoothness Slider loaded.")
