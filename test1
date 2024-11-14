@@ -1,0 +1,59 @@
+-- Create a GUI
+local player = game.Players.LocalPlayer
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player.PlayerGui
+
+-- Create a frame for the GUI
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 100)
+frame.Position = UDim2.new(0.5, -100, 0.5, -50)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.Parent = screenGui
+
+-- Create a toggle button for the aimbot
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 180, 0, 50)
+toggleButton.Position = UDim2.new(0, 10, 0, 25)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 128, 0)
+toggleButton.Text = "Toggle Aimbot"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.SourceSans
+toggleButton.TextSize = 24
+toggleButton.Parent = frame
+
+-- Aimbot state (off by default)
+local aimbotEnabled = false
+
+-- Function to handle the aimbot toggle
+local function toggleAimbot()
+    aimbotEnabled = not aimbotEnabled
+    if aimbotEnabled then
+        toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Red for enabled
+        toggleButton.Text = "Aimbot Enabled"
+        -- Add your aimbot activation code here
+        print("Aimbot Enabled")
+    else
+        toggleButton.BackgroundColor3 = Color3.fromRGB(0, 128, 0)  -- Green for disabled
+        toggleButton.Text = "Aimbot Disabled"
+        -- Add your aimbot deactivation code here
+        print("Aimbot Disabled")
+    end
+end
+
+-- Connect the toggle function to the button click event
+toggleButton.MouseButton1Click:Connect(toggleAimbot)
+
+-- Hide the entire GUI initially
+screenGui.Enabled = false
+
+-- Detect Right Shift key press to toggle visibility of the entire GUI
+local UserInputService = game:GetService("UserInputService")
+
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if gameProcessedEvent then return end  -- Ignore input if the game has already processed it
+
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.RightShift then
+        -- Toggle the visibility of the entire GUI
+        screenGui.Enabled = not screenGui.Enabled
+    end
+end)
