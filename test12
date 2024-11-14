@@ -6,53 +6,20 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
 --// Variables
-local AimbotEnabled = true
-local ESPEnabled = true
-local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
+local AimbotEnabled = false
+local AimbotStrength = 0.5
 local RightClickHeld = false
 local refreshRate = 1 -- seconds
 
---// GUI Elements
+--// GUI Setup
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.Players.LocalPlayer.PlayerGui
 
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0, 200, 0, 50)
-ToggleButton.Position = UDim2.new(0.5, -100, 0.5, -25)
-ToggleButton.Text = "Toggle Aimbot"
-ToggleButton.Parent = ScreenGui
-
-local AimbotStrengthSlider = Instance.new("Slider")
-AimbotStrengthSlider.Size = UDim2.new(0, 200, 0, 20)
-AimbotStrengthSlider.Position = UDim2.new(0.5, -100, 0.6, -10)
-AimbotStrengthSlider.MinValue = 0
-AimbotStrengthSlider.MaxValue = 1
-AimbotStrengthSlider.Value = AimbotStrength
-AimbotStrengthSlider.Parent = ScreenGui
-
---// ESP Function
-local function CreateESP(player)
-    local highlight = Instance.new("Highlight")
-    highlight.Parent = player.Character
-    highlight.Adornee = player.Character
-
-    -- Set highlight color based on team
-    if player.Team == LocalPlayer.Team then
-        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
-    else
-        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
-    end
-
-    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
-    highlight.Enabled = ESPEnabled
-
-    -- Remove highlight when player leaves
-    player.CharacterRemoving:Connect(function()
-        highlight:Destroy()
-    end)
-
-    return highlight -- Return the highlight instance
-end
+local AimbotToggleButton = Instance.new("TextButton")
+AimbotToggleButton.Size = UDim2.new(0, 200, 0, 50)
+AimbotToggleButton.Position = UDim2.new(0.5, -100, 0.5, -25)
+AimbotToggleButton.Text = "Toggle Aimbot"
+AimbotToggleButton.Parent = ScreenGui
 
 --// Aimbot Function
 local function Aimbot()
@@ -60,12 +27,12 @@ local function Aimbot()
         local closestPlayer = nil
         local closestDistance = math.huge
 
+        -- Loop through all players to find the closest one
         for _, player in pairs(Players:GetPlayers()) do
-            -- Check if the player is not the local player and has a character with a head
             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                -- Check for team and only aim at players not on the same team
+                -- Check if player is an enemy (not on the same team)
                 if player.Team ~= LocalPlayer.Team then
-                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at hair level
+                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aim at head level
                     local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
 
                     if onScreen then
@@ -81,15 +48,16 @@ local function Aimbot()
             end
         end
 
+        -- Aim at the closest player’s head
         if closestPlayer then
-            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at hair level
+            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aim at head level
             local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
-            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition
+            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition to target
         end
     end
 end
 
---// User Input for Right Click
+--// User Input for Right-Click
 UserInputService.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then
         RightClickHeld = true -- Right click held to enable aimbot
@@ -102,68 +70,17 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
---// Run Service Loop
+--// Toggle Aimbot On/Off with GUI
+AimbotToggleButton.MouseButton1Click:Connect(function()
+    AimbotEnabled = not AimbotEnabled
+    if AimbotEnabled then
+        AimbotToggleButton.Text = "Aimbot ON"
+    else
+        AimbotToggleButton.Text = "Aimbot OFF"
+    end
+end)
+
+--// Run Service Loop for Aimbot
 RunService.RenderStepped:Connect(function()
     Aimbot()
 end)
-
---// Setup ESP for all players and refresh highlights every second
-local function RefreshESP()
-    while wait(refreshRate) do
-        for _, player in pairs(Players:GetPlayers()) do
-            if player.Character then
-                local highlight = player.Character:FindFirstChildOfClass("Highlight")
-                if highlight then
-                    -- Update highlight color based on team
-                    if player.Team == LocalPlayer.Team then
-                        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
-                    else
-                        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
-                    end
-                else
-                    -- Create ESP if it doesn't exist
-                    CreateESP(player)
-                end
-            end
-        end
-    end
-end
-
---// Start the ESP refresh coroutine
-coroutine.wrap(RefreshESP)()
-
---// Initial ESP setup for players
-local function SetupPlayer(player)
-    player.CharacterAdded:Connect(function(character)
-        -- Wait for the character to fully load
-        character:WaitForChild("Head")
-        CreateESP(player) -- Create ESP for new player character
-    end)
-
-    if player.Character then
-        CreateESP(player) -- Create ESP for existing character
-    end
-end
-
---// Setup ESP for players already in the game
-for _, player in pairs(Players:GetPlayers()) do
-    SetupPlayer(player)
-end
-
---// Listen for new players
-Players.PlayerAdded:Connect(function(player)
-    SetupPlayer(player) -- Setup ESP for new players
-end)
-
---// Toggle the Aimbot and ESP from the GUI Button
-ToggleButton.MouseButton1Click:Connect(function()
-    AimbotEnabled = not AimbotEnabled
-    ToggleButton.Text = AimbotEnabled and "Disable Aimbot" or "Enable Aimbot"
-end)
-
---// Update Aimbot Strength using the Slider
-AimbotStrengthSlider.Changed:Connect(function()
-    AimbotStrength = AimbotStrengthSlider.Value
-end)
-
-print("Aimbot and ESP system initialized successfully.")
