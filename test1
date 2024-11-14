@@ -11,8 +11,9 @@ local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local EspToggle = Instance.new("TextButton")
 local AimbotToggle = Instance.new("TextButton")
-local CircularSlider = Instance.new("ImageButton")
-local AimbotStrengthSlider = Instance.new("TextButton")
+local AimbotStrengthLabel = Instance.new("TextLabel")
+local SliderBar = Instance.new("Frame")
+local SliderHandle = Instance.new("Frame")
 
 -- Configure the main GUI frame
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -33,34 +34,25 @@ AimbotToggle.Position = UDim2.new(0, 10, 0, 80)
 AimbotToggle.Text = "Toggle Aimbot (Off)"
 AimbotToggle.Parent = MainFrame
 
--- Configure aimbot strength slider
-AimbotStrengthSlider.Size = UDim2.new(0, 180, 0, 40)
-AimbotStrengthSlider.Position = UDim2.new(0, 10, 0, 140)
-AimbotStrengthSlider.Text = "Aimbot Strength: 0.1"
-AimbotStrengthSlider.Parent = MainFrame
+-- Configure Aimbot Strength Label
+AimbotStrengthLabel.Size = UDim2.new(0, 180, 0, 20)
+AimbotStrengthLabel.Position = UDim2.new(0, 10, 0, 140)
+AimbotStrengthLabel.Text = "Aimbot Strength: 0.1"
+AimbotStrengthLabel.TextColor3 = Color3.new(1, 1, 1)
+AimbotStrengthLabel.Parent = MainFrame
 
--- Configure circular slider (just for visuals here)
-CircularSlider.Size = UDim2.new(0, 50, 0, 50)
-CircularSlider.Position = UDim2.new(0.5, -25, 0.7, -25)
-CircularSlider.Image = "rbxassetid://example_image_id"  -- Replace with actual asset ID
-CircularSlider.Parent = MainFrame
+-- Configure the Slider Bar
+SliderBar.Size = UDim2.new(0, 180, 0, 10)
+SliderBar.Position = UDim2.new(0, 10, 0, 170)
+SliderBar.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+SliderBar.Parent = MainFrame
 
--- Function to toggle ESP
-EspToggle.MouseButton1Click:Connect(function()
-    espEnabled = not espEnabled
-    EspToggle.Text = espEnabled and "Toggle ESP (On)" or "Toggle ESP (Off)"
-    if espEnabled then
-        enableESP()
-    else
-        disableESP()
-    end
-end)
-
--- Function to toggle Aimbot
-AimbotToggle.MouseButton1Click:Connect(function()
-    aimbotEnabled = not aimbotEnabled
-    AimbotToggle.Text = aimbotEnabled and "Toggle Aimbot (On)" or "Toggle Aimbot (Off)"
-end)
+-- Configure the Slider Handle
+SliderHandle.Size = UDim2.new(0, 10, 0, 20)
+SliderHandle.Position = UDim2.new(0.1, -5, 0, 165)
+SliderHandle.BackgroundColor3 = Color3.new(1, 0, 0)
+SliderHandle.Parent = MainFrame
+SliderHandle.ZIndex = 2
 
 -- Right-shift to show/hide GUI
 local UserInputService = game:GetService("UserInputService")
@@ -71,53 +63,44 @@ UserInputService.InputBegan:Connect(function(input)
     end
 end)
 
--- Adjust aimbot strength by clicking the slider (increments by 0.1)
-AimbotStrengthSlider.MouseButton1Click:Connect(function()
-    aimbotStrength = aimbotStrength + 0.1
-    if aimbotStrength > 1 then
-        aimbotStrength = 0.1 -- Reset to minimum
+-- Update aimbot strength based on slider position
+local function updateAimbotStrength()
+    local relativePosition = (SliderHandle.Position.X.Offset - SliderBar.Position.X.Offset) / SliderBar.AbsoluteSize.X
+    aimbotStrength = math.clamp(relativePosition, 0.1, 1)  -- Clamp values between 0.1 and 1
+    AimbotStrengthLabel.Text = string.format("Aimbot Strength: %.2f", aimbotStrength)
+end
+
+-- Make the slider handle draggable
+local dragging = false
+
+SliderHandle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
     end
-    AimbotStrengthSlider.Text = "Aimbot Strength: " .. tostring(aimbotStrength)
 end)
 
--- ESP functionality
-function enableESP()
-    while espEnabled do
-        for _, player in pairs(game.Players:GetPlayers()) do
-            if player ~= game.Players.LocalPlayer and player.Character then
-                -- Highlight character
-                for _, part in pairs(player.Character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        local highlight = Instance.new("BoxHandleAdornment")
-                        highlight.Adornee = part
-                        highlight.Size = part.Size + Vector3.new(0.1, 0.1, 0.1)
-                        highlight.Color3 = Color3.new(1, 0, 0) -- Red color for highlight
-                        highlight.Transparency = 0.5
-                        highlight.AlwaysOnTop = true
-                        highlight.Parent = part
-                        
-                        -- Remove highlight after 1 second to refresh
-                        game.Debris:AddItem(highlight, refreshRate)
-                    end
-                end
-            end
-        end
-        wait(refreshRate)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local mouseX = input.Position.X
+        local sliderBarX = SliderBar.AbsolutePosition.X
+        local sliderBarWidth = SliderBar.AbsoluteSize.X
+        
+        -- Calculate the new position for the handle within the slider bar bounds
+        local newHandleX = math.clamp(mouseX - sliderBarX, 0, sliderBarWidth)
+        SliderHandle.Position = UDim2.new(0, newHandleX, 0, 165)
+        
+        -- Update the aimbot strength based on the new slider position
+        updateAimbotStrength()
     end
-end
+end)
 
-function disableESP()
-    -- Remove all highlights
-    for _, player in pairs(game.Players:GetPlayers()) do
-        if player.Character then
-            for _, part in pairs(player.Character:GetChildren()) do
-                if part:IsA("BasePart") and part:FindFirstChildOfClass("BoxHandleAdornment") then
-                    part:FindFirstChildOfClass("BoxHandleAdornment"):Destroy()
-                end
-            end
-        end
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
     end
-end
+end)
+
+-- Add basic ESP and aimbot functions here, as previously discussed
 
 -- Aimbot functionality with strength smoothing
 local Camera = game.Workspace.CurrentCamera
