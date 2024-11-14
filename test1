@@ -1,0 +1,209 @@
+--// Services
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+--// GUI Elements
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local AimbotToggle = Instance.new("TextButton")
+local ESPToggle = Instance.new("TextButton")
+local AimbotSlider = Instance.new("TextBox")
+local AimbotSliderLabel = Instance.new("TextLabel")
+
+ScreenGui.Parent = game.Players.LocalPlayer.PlayerGui
+ScreenGui.Name = "AimbotESP_GUI"
+ScreenGui.ResetOnSpawn = false
+
+MainFrame.Parent = ScreenGui
+MainFrame.Size = UDim2.new(0, 250, 0, 200)
+MainFrame.Position = UDim2.new(0, 10, 0, 10)
+MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+MainFrame.Visible = true
+
+-- Aimbot Toggle Button
+AimbotToggle.Parent = MainFrame
+AimbotToggle.Size = UDim2.new(0, 230, 0, 40)
+AimbotToggle.Position = UDim2.new(0, 10, 0, 10)
+AimbotToggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+AimbotToggle.Text = "Toggle Aimbot"
+AimbotToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+-- ESP Toggle Button
+ESPToggle.Parent = MainFrame
+ESPToggle.Size = UDim2.new(0, 230, 0, 40)
+ESPToggle.Position = UDim2.new(0, 10, 0, 60)
+ESPToggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+ESPToggle.Text = "Toggle ESP"
+ESPToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+-- Aimbot Strength Slider
+AimbotSliderLabel.Parent = MainFrame
+AimbotSliderLabel.Size = UDim2.new(0, 230, 0, 30)
+AimbotSliderLabel.Position = UDim2.new(0, 10, 0, 110)
+AimbotSliderLabel.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+AimbotSliderLabel.Text = "Aimbot Strength"
+AimbotSliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+AimbotSlider.Parent = MainFrame
+AimbotSlider.Size = UDim2.new(0, 230, 0, 40)
+AimbotSlider.Position = UDim2.new(0, 10, 0, 140)
+AimbotSlider.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+AimbotSlider.Text = tostring(AimbotStrength)
+AimbotSlider.TextColor3 = Color3.fromRGB(255, 255, 255)
+AimbotSlider.ClearTextOnFocus = false
+
+--// Variables
+local AimbotEnabled = true
+local ESPEnabled = true
+local AimbotStrength = 0.5
+local LeftControlHeld = false
+local refreshRate = 1
+local GUIVisible = true
+
+--// Toggle Aimbot
+AimbotToggle.MouseButton1Click:Connect(function()
+    AimbotEnabled = not AimbotEnabled
+    AimbotToggle.Text = AimbotEnabled and "Aimbot Enabled" or "Aimbot Disabled"
+end)
+
+--// Toggle ESP
+ESPToggle.MouseButton1Click:Connect(function()
+    ESPEnabled = not ESPEnabled
+    ESPToggle.Text = ESPEnabled and "ESP Enabled" or "ESP Disabled"
+end)
+
+--// Change Aimbot Strength
+AimbotSlider.FocusLost:Connect(function()
+    local strength = tonumber(AimbotSlider.Text)
+    if strength and strength >= 0 and strength <= 1 then
+        AimbotStrength = strength
+    else
+        AimbotSlider.Text = tostring(AimbotStrength)
+    end
+end)
+
+--// Show/Hide GUI with Right Shift key
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        GUIVisible = not GUIVisible
+        MainFrame.Visible = GUIVisible
+    end
+end)
+
+--// ESP Function
+local function CreateESP(player)
+    local highlight = Instance.new("Highlight")
+    highlight.Parent = player.Character
+    highlight.Adornee = player.Character
+
+    if player.Team == LocalPlayer.Team then
+        highlight.FillColor = Color3.fromRGB(0, 255, 0)
+    else
+        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+    end
+
+    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+    highlight.Enabled = ESPEnabled
+
+    player.CharacterRemoving:Connect(function()
+        highlight:Destroy()
+    end)
+    
+    return highlight
+end
+
+--// Aimbot Function
+local function Aimbot()
+    if LeftControlHeld and AimbotEnabled then
+        local closestPlayer = nil
+        local closestDistance = math.huge
+
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                if player.Team ~= LocalPlayer.Team then
+                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0)
+                    local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
+
+                    if onScreen then
+                        local mousePosition = UserInputService:GetMouseLocation()
+                        local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            closestPlayer = player
+                        end
+                    end
+                end
+            end
+        end
+
+        if closestPlayer then
+            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0)
+            local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
+            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength)
+        end
+    end
+end
+
+--// User Input for Left Control Key
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        LeftControlHeld = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        LeftControlHeld = false
+    end
+end)
+
+--// Run Service Loop
+RunService.RenderStepped:Connect(function()
+    Aimbot()
+end)
+
+--// Setup ESP for all players
+local function RefreshESP()
+    while wait(refreshRate) do
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                local highlight = player.Character:FindFirstChildOfClass("Highlight")
+                if highlight then
+                    if player.Team == LocalPlayer.Team then
+                        highlight.FillColor = Color3.fromRGB(0, 255, 0)
+                    else
+                        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                    end
+                else
+                    CreateESP(player)
+                end
+            end
+        end
+    end
+end
+
+coroutine.wrap(RefreshESP)()
+
+--// Initial ESP setup for players
+local function SetupPlayer(player)
+    player.CharacterAdded:Connect(function(character)
+        character:WaitForChild("Head")
+        CreateESP(player)
+    end)
+
+    if player.Character then
+        CreateESP(player)
+    end
+end
+
+for _, player in pairs(Players:GetPlayers()) do
+    SetupPlayer(player)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    SetupPlayer(player)
+end)
