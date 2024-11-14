@@ -4,7 +4,7 @@ local Frame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
 local AimbotToggle = Instance.new("TextButton")
 local ESPToggle = Instance.new("TextButton")
-local SmoothnessSlider = Instance.new("TextButton") -- Using TextButton as placeholder for slider
+local SmoothnessSlider = Instance.new("TextBox") -- Using TextBox as slider input
 local KeyDropdown = Instance.new("TextButton")
 
 -- GUI properties
@@ -38,11 +38,11 @@ ESPToggle.Text = "Toggle ESP"
 ESPToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 ESPToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 
--- Smoothness "Slider" (Placeholder using TextButton)
+-- Smoothness Slider
 SmoothnessSlider.Parent = Frame
 SmoothnessSlider.Size = UDim2.new(0, 200, 0, 50)
 SmoothnessSlider.Position = UDim2.new(0, 50, 0, 180)
-SmoothnessSlider.Text = "Smoothness: 0.5"
+SmoothnessSlider.Text = "0.5"  -- Default strength
 SmoothnessSlider.TextColor3 = Color3.fromRGB(255, 255, 255)
 SmoothnessSlider.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 
@@ -57,7 +57,7 @@ KeyDropdown.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 -- Variables
 local aimbotEnabled = false
 local espEnabled = false
-local aimbotSmoothness = 0.5
+local aimbotSmoothness = tonumber(SmoothnessSlider.Text)
 local selectedKey = Enum.KeyCode.LeftControl -- Default key
 local guiVisible = false
 
@@ -70,17 +70,20 @@ end
 local function toggleESP()
     espEnabled = not espEnabled
     ESPToggle.Text = espEnabled and "ESP: ON" or "ESP: OFF"
+    if espEnabled then
+        -- Insert code for team check here
+        -- Example: Iterate over players and highlight only enemies
+    end
 end
 
 local function adjustSmoothness()
-    aimbotSmoothness = aimbotSmoothness + 0.1
-    if aimbotSmoothness > 1 then aimbotSmoothness = 0 end
-    SmoothnessSlider.Text = "Smoothness: " .. tostring(aimbotSmoothness)
+    aimbotSmoothness = tonumber(SmoothnessSlider.Text) or 0.5
+    SmoothnessSlider.Text = tostring(aimbotSmoothness)
 end
 
 local function changeKey()
     if selectedKey == Enum.KeyCode.LeftControl then
-        selectedKey = Enum.KeyCode.ButtonR2 -- Example for right click
+        selectedKey = Enum.KeyCode.ButtonR2 -- Example for right-click
         KeyDropdown.Text = "Select Key: Right Click"
     elseif selectedKey == Enum.KeyCode.ButtonR2 then
         selectedKey = Enum.KeyCode.ButtonL2 -- Example for left click
@@ -96,19 +99,37 @@ local function toggleGuiVisibility()
     Frame.Visible = guiVisible
 end
 
+local function aimAt(target)
+    if not target then return end
+    local playerCamera = workspace.CurrentCamera
+    local headPosition = target:FindFirstChild("Head").Position
+    local smoothFactor = aimbotSmoothness
+
+    playerCamera.CFrame = CFrame.new(playerCamera.CFrame.Position, headPosition:Lerp(playerCamera.CFrame.Position, smoothFactor))
+end
+
 -- Connect GUI events
 AimbotToggle.MouseButton1Click:Connect(toggleAimbot)
 ESPToggle.MouseButton1Click:Connect(toggleESP)
-SmoothnessSlider.MouseButton1Click:Connect(adjustSmoothness)
+SmoothnessSlider.FocusLost:Connect(adjustSmoothness)
 KeyDropdown.MouseButton1Click:Connect(changeKey)
 
--- Right Shift key handling to show/hide GUI
+-- Aimbot and ESP Key Handling
 game:GetService("UserInputService").InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.RightShift then
         toggleGuiVisibility()
-    elseif input.KeyCode == selectedKey then
-        toggleAimbot()
+    elseif input.KeyCode == selectedKey and aimbotEnabled then
+        -- Target the nearest enemy player here (pseudo-code below)
+        local targetPlayer = nil
+        -- Iterate over players and choose the closest target to aim at
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player.Team ~= game.Players.LocalPlayer.Team then -- Team check
+                targetPlayer = player.Character -- Assuming enemy character has a "Head"
+                break
+            end
+        end
+        aimAt(targetPlayer)
     end
 end)
 
-print("GUI with Aimbot, ESP, Smoothness, and Right Shift toggle loaded.")
+print("GUI with Aimbot, ESP, Smoothness Slider, Team Check, and Right Shift toggle loaded.")
