@@ -4,8 +4,9 @@ local Frame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
 local AimbotToggle = Instance.new("TextButton")
 local ESPToggle = Instance.new("TextButton")
-local SmoothnessSlider = Instance.new("TextBox") -- Using TextBox as slider input
-local KeyDropdown = Instance.new("TextButton")
+local SmoothnessSlider = Instance.new("TextButton")
+local SliderBar = Instance.new("Frame")
+local SliderFill = Instance.new("Frame")
 
 -- GUI properties
 ScreenGui.Parent = game.CoreGui
@@ -42,23 +43,25 @@ ESPToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 SmoothnessSlider.Parent = Frame
 SmoothnessSlider.Size = UDim2.new(0, 200, 0, 50)
 SmoothnessSlider.Position = UDim2.new(0, 50, 0, 180)
-SmoothnessSlider.Text = "0.5"  -- Default strength
+SmoothnessSlider.Text = "Aimbot Smoothness"
 SmoothnessSlider.TextColor3 = Color3.fromRGB(255, 255, 255)
 SmoothnessSlider.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 
--- Key Dropdown (for selecting custom key)
-KeyDropdown.Parent = Frame
-KeyDropdown.Size = UDim2.new(0, 200, 0, 50)
-KeyDropdown.Position = UDim2.new(0, 50, 0, 240)
-KeyDropdown.Text = "Select Key: Left Ctrl"
-KeyDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
-KeyDropdown.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+-- Slider Bar
+SliderBar.Parent = SmoothnessSlider
+SliderBar.Size = UDim2.new(0, 180, 0, 20)
+SliderBar.Position = UDim2.new(0, 10, 0, 25)
+SliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+
+-- Slider Fill
+SliderFill.Parent = SliderBar
+SliderFill.Size = UDim2.new(0.5, 0, 1, 0)  -- Default to 50% smoothness
+SliderFill.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
 
 -- Variables
 local aimbotEnabled = false
 local espEnabled = false
-local aimbotSmoothness = tonumber(SmoothnessSlider.Text)
-local selectedKey = Enum.KeyCode.LeftControl -- Default key
+local aimbotSmoothness = 0.5 -- Default smoothness
 local guiVisible = false
 
 -- Functions
@@ -91,22 +94,12 @@ local function toggleESP()
     end
 end
 
-local function adjustSmoothness()
-    aimbotSmoothness = tonumber(SmoothnessSlider.Text) or 0.5
-    SmoothnessSlider.Text = tostring(aimbotSmoothness)
-end
-
-local function changeKey()
-    if selectedKey == Enum.KeyCode.LeftControl then
-        selectedKey = Enum.UserInputType.MouseButton2 -- Right-click
-        KeyDropdown.Text = "Select Key: Right Click"
-    elseif selectedKey == Enum.UserInputType.MouseButton2 then
-        selectedKey = Enum.UserInputType.MouseButton1 -- Left-click
-        KeyDropdown.Text = "Select Key: Left Click"
-    else
-        selectedKey = Enum.KeyCode.LeftControl
-        KeyDropdown.Text = "Select Key: Left Ctrl"
-    end
+local function adjustSmoothness(input)
+    -- Adjust slider fill based on mouse position
+    local mousePos = input.Position.X - SliderBar.AbsolutePosition.X
+    local newSize = math.clamp(mousePos / SliderBar.AbsoluteSize.X, 0, 1)
+    SliderFill.Size = UDim2.new(newSize, 0, 1, 0)
+    aimbotSmoothness = newSize -- Update smoothness
 end
 
 local function toggleGuiVisibility()
@@ -126,14 +119,22 @@ end
 -- Connect GUI events
 AimbotToggle.MouseButton1Click:Connect(toggleAimbot)
 ESPToggle.MouseButton1Click:Connect(toggleESP)
-SmoothnessSlider.FocusLost:Connect(adjustSmoothness)
-KeyDropdown.MouseButton1Click:Connect(changeKey)
+SliderBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        adjustSmoothness(input)
+    end
+end)
+SliderBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        adjustSmoothness(input)
+    end
+end)
 
 -- Aimbot and ESP Key Handling
 game:GetService("UserInputService").InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.RightShift then
         toggleGuiVisibility()
-    elseif input.UserInputType == selectedKey and aimbotEnabled then
+    elseif input.KeyCode == Enum.KeyCode.LeftControl and aimbotEnabled then
         -- Target the nearest enemy player here (pseudo-code below)
         local targetPlayer = nil
         for _, player in pairs(game.Players:GetPlayers()) do
@@ -146,4 +147,4 @@ game:GetService("UserInputService").InputBegan:Connect(function(input)
     end
 end)
 
-print("GUI with Aimbot, ESP, Smoothness Slider, Team Check, and Right Shift toggle loaded.")
+print("GUI with Aimbot, ESP, Bar Slider for Smoothness, and Right Shift toggle loaded.")
