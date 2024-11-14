@@ -10,7 +10,42 @@ local AimbotEnabled = true
 local ESPEnabled = true
 local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
 local LeftControlHeld = false
+local RightClickHeld = false
 local refreshRate = 1 -- seconds
+local GUIVisible = false
+local ESPHighlights = {}
+
+--// GUI Setup (using a simple GUI for toggling)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 200, 0, 100)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -50) -- Center of the screen
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.Parent = ScreenGui
+
+local AimbotButton = Instance.new("TextButton")
+AimbotButton.Size = UDim2.new(0, 180, 0, 30)
+AimbotButton.Position = UDim2.new(0, 10, 0, 10)
+AimbotButton.Text = "Toggle Aimbot"
+AimbotButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+AimbotButton.Parent = MainFrame
+
+local ESPButton = Instance.new("TextButton")
+ESPButton.Size = UDim2.new(0, 180, 0, 30)
+ESPButton.Position = UDim2.new(0, 10, 0, 50)
+ESPButton.Text = "Toggle ESP"
+ESPButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+ESPButton.Parent = MainFrame
+
+--// Toggle GUI Visibility with Right Shift
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        GUIVisible = not GUIVisible
+        ScreenGui.Enabled = GUIVisible
+    end
+end)
 
 --// ESP Function to highlight player body
 local function CreateESP(player)
@@ -39,7 +74,7 @@ end
 
 --// Aimbot Function
 local function Aimbot()
-    if LeftControlHeld and AimbotEnabled then
+    if RightClickHeld and AimbotEnabled then
         local closestPlayer = nil
         local closestDistance = math.huge
 
@@ -72,16 +107,20 @@ local function Aimbot()
     end
 end
 
---// User Input for Left Control Key
+--// User Input for Left Control Key (Aimbot Toggle)
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.LeftControl then
         LeftControlHeld = true -- Left control held to enable aimbot
+    elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+        RightClickHeld = true -- Right-click held to lock aimbot onto player
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.LeftControl then
         LeftControlHeld = false -- Release left control to disable aimbot
+    elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+        RightClickHeld = false -- Stop aimbot lock when right-click is released
     end
 end)
 
@@ -136,4 +175,15 @@ end
 --// Listen for new players
 Players.PlayerAdded:Connect(function(player)
     SetupPlayer(player) -- Setup ESP for new players
+end)
+
+--// GUI Button Functions
+AimbotButton.MouseButton1Click:Connect(function()
+    AimbotEnabled = not AimbotEnabled
+    AimbotButton.Text = AimbotEnabled and "Disable Aimbot" or "Enable Aimbot"
+end)
+
+ESPButton.MouseButton1Click:Connect(function()
+    ESPEnabled = not ESPEnabled
+    ESPButton.Text = ESPEnabled and "Disable ESP" or "Enable ESP"
 end)
