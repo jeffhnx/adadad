@@ -74,19 +74,24 @@ end
 local function toggleESP()
     espEnabled = not espEnabled
     ESPToggle.Text = espEnabled and "ESP: ON" or "ESP: OFF"
+end
+
+local function refreshESP()
     if espEnabled then
-        -- Highlight players based on team
         for _, player in pairs(game.Players:GetPlayers()) do
             if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local highlight = Instance.new("Highlight")
-                highlight.Parent = player.Character
+                local highlight = player.Character:FindFirstChild("Highlight")
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Parent = player.Character
+                end
                 highlight.FillColor = (player.Team == game.Players.LocalPlayer.Team) and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
                 highlight.FillTransparency = 0.5
                 highlight.OutlineTransparency = 1
             end
         end
     else
-        -- Remove highlights
+        -- Remove highlights when ESP is turned off
         for _, player in pairs(game.Players:GetPlayers()) do
             if player.Character and player.Character:FindFirstChild("Highlight") then
                 player.Character.Highlight:Destroy()
@@ -117,6 +122,27 @@ local function aimAt(target)
     playerCamera.CFrame = CFrame.new(playerCamera.CFrame.Position, headPosition:Lerp(playerCamera.CFrame.Position, smoothFactor))
 end
 
+local function getClosestEnemy()
+    local closestPlayer = nil
+    local closestDistance = math.huge
+    local screenCenter = workspace.CurrentCamera.ViewportSize / 2
+
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Team ~= game.Players.LocalPlayer.Team and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
+            if onScreen then
+                local distance = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestPlayer = player
+                end
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
 -- Connect GUI events
 AimbotToggle.MouseButton1Click:Connect(toggleAimbot)
 ESPToggle.MouseButton1Click:Connect(toggleESP)
@@ -145,16 +171,19 @@ game:GetService("UserInputService").InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.RightShift then
         toggleGuiVisibility()
     elseif input.KeyCode == Enum.KeyCode.LeftControl and aimbotEnabled then
-        -- Target the nearest enemy player here (pseudo-code below)
-        local targetPlayer = nil
-        for _, player in pairs(game.Players:GetPlayers()) do
-            if player.Team ~= game.Players.LocalPlayer.Team then
-                targetPlayer = player.Character -- Target enemy
-                break
-            end
+        -- Aim at the closest enemy
+        local closestPlayer = getClosestEnemy()
+        if closestPlayer then
+            aimAt(closestPlayer.Character)
         end
-        aimAt(targetPlayer)
     end
 end)
 
-print("GUI with Aimbot, ESP, Bar Slider for Smoothness, and Right Shift toggle loaded.")
+-- ESP Refresh Loop
+game:GetService("RunService").Stepped:Connect(function()
+    if espEnabled then
+        refreshESP()
+    end
+end)
+
+print("GUI with Aimbot tracking closest player, ESP, and Smoothness Slider loaded.")
