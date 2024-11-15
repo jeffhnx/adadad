@@ -12,14 +12,16 @@ local ESPEnabled = false
 local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
 local LeftControlHeld = false
 local refreshRate = 1 -- seconds
+local guiVisible = true -- Track if the GUI is visible
 
 --// GUI Setup
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = PlayerGui
+screenGui.Enabled = guiVisible -- Initially visible
 
 local espButton = Instance.new("TextButton")
 espButton.Size = UDim2.new(0, 200, 0, 50)
-espButton.Position = UDim2.new(0.5, -100, 0, 50)
+espButton.Position = UDim2.new(0.5, -100, 0, -75) -- Position in the center of the screen
 espButton.Text = "Toggle ESP"
 espButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 espButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
@@ -27,7 +29,7 @@ espButton.Parent = screenGui
 
 local aimbotButton = Instance.new("TextButton")
 aimbotButton.Size = UDim2.new(0, 200, 0, 50)
-aimbotButton.Position = UDim2.new(0.5, -100, 0, 120)
+aimbotButton.Position = UDim2.new(0.5, -100, 0, -20) -- Position in the center of the screen below ESP button
 aimbotButton.Text = "Toggle Aimbot"
 aimbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 aimbotButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
@@ -167,4 +169,12 @@ end)
 aimbotButton.MouseButton1Click:Connect(function()
     AimbotEnabled = not AimbotEnabled
     aimbotButton.Text = AimbotEnabled and "Aimbot Enabled" or "Toggle Aimbot"
+end)
+
+--// Toggle GUI Visibility with Right Shift
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        guiVisible = not guiVisible -- Toggle visibility
+        screenGui.Enabled = guiVisible
+    end
 end)
