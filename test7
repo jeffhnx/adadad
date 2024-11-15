@@ -1,0 +1,188 @@
+local player = game.Players.LocalPlayer
+local camera = game.Workspace.CurrentCamera
+local screenGui = player.PlayerGui:WaitForChild("ScreenGui")
+local aimbotEnabled = false
+local espEnabled = false
+
+-- Aimbot slider values
+local aimbotStrength = 50  -- Default strength, can be adjusted by slider
+
+-- Create a GUI to hold the slider and buttons
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 200, 0, 300)
+mainFrame.Position = UDim2.new(0, 10, 0, 10)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BackgroundTransparency = 0.5
+mainFrame.Parent = screenGui
+
+-- Create the Aimbot Toggle Button
+local aimbotToggleButton = Instance.new("TextButton")
+aimbotToggleButton.Size = UDim2.new(0, 180, 0, 50)
+aimbotToggleButton.Position = UDim2.new(0, 10, 0, 10)
+aimbotToggleButton.Text = "Toggle Aimbot"
+aimbotToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimbotToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+aimbotToggleButton.Parent = mainFrame
+
+-- Create the ESP Toggle Button
+local espToggleButton = Instance.new("TextButton")
+espToggleButton.Size = UDim2.new(0, 180, 0, 50)
+espToggleButton.Position = UDim2.new(0, 10, 0, 70)
+espToggleButton.Text = "Toggle ESP"
+espToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+espToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+espToggleButton.Parent = mainFrame
+
+-- Create the Aimbot Strength Slider as a bar
+local sliderBackground = Instance.new("Frame")
+sliderBackground.Size = UDim2.new(0, 180, 0, 20)
+sliderBackground.Position = UDim2.new(0, 10, 0, 130)
+sliderBackground.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+sliderBackground.Parent = mainFrame
+
+local sliderFill = Instance.new("Frame")
+sliderFill.Size = UDim2.new(aimbotStrength / 100, 0, 1, 0)  -- Set initial value
+sliderFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Green color for the bar fill
+sliderFill.Parent = sliderBackground
+
+-- Label for Aimbot Strength
+local aimbotStrengthLabel = Instance.new("TextLabel")
+aimbotStrengthLabel.Size = UDim2.new(0, 180, 0, 20)
+aimbotStrengthLabel.Position = UDim2.new(0, 10, 0, 160)
+aimbotStrengthLabel.Text = "Aimbot Strength: " .. math.floor(aimbotStrength)
+aimbotStrengthLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimbotStrengthLabel.BackgroundTransparency = 1
+aimbotStrengthLabel.TextScaled = true
+aimbotStrengthLabel.Parent = mainFrame
+
+-- Update the aimbot strength as the slider is adjusted
+local function updateSlider(newValue)
+    aimbotStrength = newValue
+    sliderFill.Size = UDim2.new(aimbotStrength / 100, 0, 1, 0)  -- Adjust the fill based on the new strength
+    aimbotStrengthLabel.Text = "Aimbot Strength: " .. math.floor(aimbotStrength)
+end
+
+-- Mouse input for slider
+sliderBackground.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local mouseX = input.Position.X - sliderBackground.AbsolutePosition.X
+        local newValue = math.clamp(mouseX / sliderBackground.AbsoluteSize.X, 0, 1) * 100
+        updateSlider(newValue)
+    end
+end)
+
+-- Toggle aimbot
+aimbotToggleButton.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    if aimbotEnabled then
+        aimbotToggleButton.Text = "Aimbot: ON"
+    else
+        aimbotToggleButton.Text = "Aimbot: OFF"
+    end
+end)
+
+-- Toggle ESP
+espToggleButton.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    if espEnabled then
+        espToggleButton.Text = "ESP: ON"
+    else
+        espToggleButton.Text = "ESP: OFF"
+    end
+end)
+
+-- Function to draw ESP (Highlight players)
+local function drawESP(targetPlayer)
+    if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local targetHRP = targetPlayer.Character.HumanoidRootPart
+        local screenPos, onScreen = camera:WorldToScreenPoint(targetHRP.Position)
+
+        if onScreen then
+            local espBox = Instance.new("Frame")
+            espBox.Size = UDim2.new(0, 100, 0, 100)
+            espBox.Position = UDim2.new(0, screenPos.X - 50, 0, screenPos.Y - 50)
+            espBox.BorderSizePixel = 2
+            espBox.BorderColor3 = Color3.fromRGB(255, 0, 0)
+            espBox.BackgroundTransparency = 0.5
+            espBox.Parent = screenGui
+        end
+    end
+end
+
+-- Function to refresh ESP every second
+local function refreshESP()
+    while true do
+        -- Clear previous ESP elements (boxes, names) on the screen
+        for _, child in pairs(screenGui:GetChildren()) do
+            if child:IsA("Frame") then
+                child:Destroy()
+            end
+        end
+
+        -- Loop through all players and draw ESP if enabled
+        for _, targetPlayer in pairs(game.Players:GetPlayers()) do
+            if targetPlayer ~= player then
+                if espEnabled then
+                    drawESP(targetPlayer)
+                end
+            end
+        end
+
+        -- Wait for a second before refreshing again
+        wait(1)
+    end
+end
+
+-- Function to aim at the player's head with strength adjustment
+local function aimAtPlayer(targetPlayer)
+    if aimbotEnabled and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidHead") then
+        local targetHead = targetPlayer.Character.HumanoidHead
+        local targetPos = targetHead.Position
+        local screenPos, onScreen = camera:WorldToScreenPoint(targetPos)
+
+        if onScreen then
+            -- Aimbot strength adjusts how close the aim will be to the target head
+            local strengthFactor = aimbotStrength / 100
+            local aimOffset = Vector2.new((screenPos.X - camera.ViewportSize.X / 2) * strengthFactor,
+                                          (screenPos.Y - camera.ViewportSize.Y / 2) * strengthFactor)
+            local newAimPos = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2) + aimOffset
+
+            -- Set the mouse position to the calculated aim position
+            game:GetService("UserInputService"):MouseMove(newAimPos)
+        end
+    end
+end
+
+-- Aimbot loop that continuously tracks targets and adjusts aim
+local function aimbotLoop()
+    while true do
+        if aimbotEnabled then
+            local closestPlayer = nil
+            local closestDistance = math.huge
+            for _, targetPlayer in pairs(game.Players:GetPlayers()) do
+                if targetPlayer ~= player and targetPlayer.Character then
+                    local targetHead = targetPlayer.Character:FindFirstChild("HumanoidHead")
+                    if targetHead then
+                        local screenPos, onScreen = camera:WorldToScreenPoint(targetHead.Position)
+                        if onScreen then
+                            local dist = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)).Magnitude
+                            if dist < closestDistance then
+                                closestPlayer = targetPlayer
+                                closestDistance = dist
+                            end
+                        end
+                    end
+                end
+            end
+
+            if closestPlayer then
+                aimAtPlayer(closestPlayer)
+            end
+        end
+        wait(0.01)
+    end
+end
+
+-- Start the ESP and aimbot loops
+refreshESP()
+aimbotLoop()
