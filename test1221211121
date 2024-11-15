@@ -15,7 +15,7 @@ screenGui.Parent = playerGui
 local aimbotEnabled = false
 local espEnabled = false
 local targetPlayer = nil
-local walkingToHead = false
+local holdingRightClick = false
 
 -- Create Frame for GUI
 local gui = Instance.new("Frame")
@@ -131,26 +131,12 @@ end
 
 -- Aimbot Logic (locking onto the closest player's head)
 local function aimbot()
-    if aimbotEnabled and walkingToHead then
+    if aimbotEnabled and targetPlayer then
         local head = targetPlayer.Character:FindFirstChild("Head")
         if head then
+            -- Lock the camera onto the player's head
             local headPosition = camera:WorldToScreenPoint(head.Position)
-            -- Move the mouse to the closest player's head position
-            game:GetService("VirtualUser"):ClickMouseButton(0)
-            UIS.MouseMove:Fire(mousePos.X, mousePos.Y)
-        end
-    end
-end
-
--- Function to move towards the target player's head
-local function walkToHead()
-    if targetPlayer and targetPlayer.Character then
-        local head = targetPlayer.Character:FindFirstChild("Head")
-        if head then
-            -- Move towards the head position
-            local targetPos = head.Position
-            local direction = (targetPos - character.HumanoidRootPart.Position).unit
-            character:MoveTo(targetPos - direction * 3)  -- Adjust for smooth movement, you can modify the multiplier
+            camera.CFrame = CFrame.lookAt(camera.CFrame.Position, head.Position)
         end
     end
 end
@@ -164,30 +150,27 @@ UIS.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Main Loop for Aimbot and ESP
+-- Handle Right Click to enable aimbot lock
 UIS.InputBegan:Connect(function(input, gameProcessed)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then  -- Right-click hold
-        walkingToHead = true
+        holdingRightClick = true
     end
 end)
 
 UIS.InputEnded:Connect(function(input, gameProcessed)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then  -- Right-click release
-        walkingToHead = false
+        holdingRightClick = false
     end
 end)
 
--- Continuously update ESP and Aimbot
+-- Continuously update Aimbot and ESP
 while true do
-    if aimbotEnabled then
-        targetPlayer = getClosestPlayer()
-        if walkingToHead then
-            walkToHead()
-        end
-        aimbot()
+    if aimbotEnabled and holdingRightClick then
+        targetPlayer = getClosestPlayer()  -- Find the closest player to the center of the screen
+        aimbot()  -- Lock onto the player's head
     end
     if espEnabled then
-        updateESP()
+        updateESP()  -- Continuously update ESP
     end
-    wait(0.1)  -- Update every 0.1 seconds for smooth movement and ESP updates
+    wait(0.1)  -- Update every 0.1 seconds for smooth aimbot/ESP behavior
 end
