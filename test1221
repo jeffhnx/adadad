@@ -37,10 +37,10 @@ aimbotButton.Text = "Toggle Aimbot"
 aimbotButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 aimbotButton.Parent = mainFrame
 
--- Create a slider for aimbot strength
+-- Create a bigger slider for aimbot strength
 local aimbotStrengthSlider = Instance.new("Frame")
-aimbotStrengthSlider.Size = UDim2.new(0, 200, 0, 10)
-aimbotStrengthSlider.Position = UDim2.new(0.5, -100, 0, 120)
+aimbotStrengthSlider.Size = UDim2.new(0, 250, 0, 15)  -- Increased size
+aimbotStrengthSlider.Position = UDim2.new(0.5, -125, 0, 120)
 aimbotStrengthSlider.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 aimbotStrengthSlider.Parent = mainFrame
 
@@ -80,6 +80,7 @@ local espEnabled = false
 espButton.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
     print("ESP Enabled:", espEnabled)
+    
     -- Highlight players in red when ESP is enabled
     for _, otherPlayer in pairs(players:GetPlayers()) do
         if otherPlayer ~= player then
@@ -87,7 +88,11 @@ espButton.MouseButton1Click:Connect(function()
             if character then
                 for _, part in pairs(character:GetChildren()) do
                     if part:IsA("Part") then
-                        part.BrickColor = BrickColor.new("Bright red")  -- Change the color of each part to red
+                        if espEnabled then
+                            part.BrickColor = BrickColor.new("Bright red")  -- Change the color of each part to red
+                        else
+                            part.BrickColor = BrickColor.new("Institutional white")  -- Reset color to default white
+                        end
                     end
                 end
             end
