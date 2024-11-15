@@ -1,6 +1,10 @@
 -- Services
 local player = game.Players.LocalPlayer
 local playerGui = player.PlayerGui
+local mouse = player:GetMouse()
+local camera = game.Workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local players = game:GetService("Players")
 
 -- Check if 'ScreenGul' exists, if not, create it
 local screenGui = playerGui:FindFirstChild("ScreenGul")
@@ -76,23 +80,72 @@ local espEnabled = false
 espButton.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
     print("ESP Enabled:", espEnabled)
-    -- Here you would implement the logic to show/hide ESP elements
+    -- Highlight players in red when ESP is enabled
+    for _, otherPlayer in pairs(players:GetPlayers()) do
+        if otherPlayer ~= player then
+            local character = otherPlayer.Character
+            if character then
+                for _, part in pairs(character:GetChildren()) do
+                    if part:IsA("Part") then
+                        part.BrickColor = BrickColor.new("Bright red")  -- Change the color of each part to red
+                    end
+                end
+            end
+        end
+    end
 end)
 
 -- Function to toggle Aimbot
 local aimbotEnabled = false
+local lockTarget = nil
 aimbotButton.MouseButton1Click:Connect(function()
     aimbotEnabled = not aimbotEnabled
     print("Aimbot Enabled:", aimbotEnabled)
-    -- Here you would implement the logic for aimbot functionality
+end)
+
+-- Function to handle right-click aiming (lock on player's head)
+local function aimAtHead(targetPlayer)
+    if targetPlayer and targetPlayer.Character then
+        local targetHead = targetPlayer.Character:FindFirstChild("Head")
+        if targetHead then
+            local direction = (targetHead.Position - camera.CFrame.Position).unit
+            camera.CFrame = CFrame.new(camera.CFrame.Position, targetHead.Position)  -- Point camera at the target's head
+        end
+    end
+end
+
+-- Function to track the player's head while right-click is held
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton2 and aimbotEnabled then
+        -- Lock onto nearest player head when right-click is held
+        while UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) do
+            local closestPlayer = nil
+            local closestDistance = math.huge
+            for _, otherPlayer in pairs(players:GetPlayers()) do
+                if otherPlayer ~= player and otherPlayer.Character then
+                    local head = otherPlayer.Character:FindFirstChild("Head")
+                    if head then
+                        local distance = (camera.CFrame.Position - head.Position).magnitude
+                        if distance < closestDistance then
+                            closestPlayer = otherPlayer
+                            closestDistance = distance
+                        end
+                    end
+                end
+            end
+            if closestPlayer then
+                aimAtHead(closestPlayer)
+            end
+            wait(0.1)  -- Update every 0.1 seconds
+        end
+    end
 end)
 
 -- Toggle GUI visibility with Right Shift key
-local UserInputService = game:GetService("UserInputService")
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == Enum.KeyCode.RightShift then
         screenGui.Visible = not screenGui.Visible
     end
 end)
-
