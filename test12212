@@ -77,21 +77,46 @@ end)
 
 -- Function to toggle ESP
 local espEnabled = false
+local espParts = {}
+
 espButton.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
     print("ESP Enabled:", espEnabled)
-    
+
     -- Highlight players in red when ESP is enabled
     for _, otherPlayer in pairs(players:GetPlayers()) do
         if otherPlayer ~= player then
             local character = otherPlayer.Character
             if character then
-                for _, part in pairs(character:GetChildren()) do
-                    if part:IsA("Part") then
-                        if espEnabled then
-                            part.BrickColor = BrickColor.new("Bright red")  -- Change the color of each part to red
-                        else
-                            part.BrickColor = BrickColor.new("Institutional white")  -- Reset color to default white
+                -- Create or remove ESP part for each player
+                local head = character:FindFirstChild("Head")
+                if head then
+                    local espPart = espParts[otherPlayer]
+
+                    -- If ESP is enabled, create ESP part
+                    if espEnabled then
+                        if not espPart then
+                            espPart = Instance.new("BillboardGui")
+                            espPart.Name = "ESPPart"
+                            espPart.Size = UDim2.new(0, 100, 0, 100)
+                            espPart.Adornee = head
+                            espPart.AlwaysOnTop = true
+                            espPart.Parent = screenGui
+
+                            local frame = Instance.new("Frame")
+                            frame.Size = UDim2.new(1, 0, 1, 0)
+                            frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+                            frame.BackgroundTransparency = 0.5
+                            frame.BorderSizePixel = 0
+                            frame.Parent = espPart
+
+                            espParts[otherPlayer] = espPart
+                        end
+                    else
+                        -- Remove ESP part when disabled
+                        if espPart then
+                            espPart:Destroy()
+                            espParts[otherPlayer] = nil
                         end
                     end
                 end
@@ -102,7 +127,6 @@ end)
 
 -- Function to toggle Aimbot
 local aimbotEnabled = false
-local lockTarget = nil
 aimbotButton.MouseButton1Click:Connect(function()
     aimbotEnabled = not aimbotEnabled
     print("Aimbot Enabled:", aimbotEnabled)
@@ -119,26 +143,37 @@ local function aimAtHead(targetPlayer)
     end
 end
 
+-- Function to find the closest player to the center of the screen
+local function getClosestPlayerToCenter()
+    local closestPlayer = nil
+    local closestDistance = math.huge
+    local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)  -- Center of the screen
+    
+    for _, otherPlayer in pairs(players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            local head = otherPlayer.Character:FindFirstChild("Head")
+            if head then
+                local screenPos, onScreen = camera:WorldToScreenPoint(head.Position)
+                if onScreen then
+                    local distance = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).magnitude
+                    if distance < closestDistance then
+                        closestPlayer = otherPlayer
+                        closestDistance = distance
+                    end
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
 -- Function to track the player's head while right-click is held
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.UserInputType == Enum.UserInputType.MouseButton2 and aimbotEnabled then
-        -- Lock onto nearest player head when right-click is held
+        -- Lock onto the closest player to the center of the screen when right-click is held
         while UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) do
-            local closestPlayer = nil
-            local closestDistance = math.huge
-            for _, otherPlayer in pairs(players:GetPlayers()) do
-                if otherPlayer ~= player and otherPlayer.Character then
-                    local head = otherPlayer.Character:FindFirstChild("Head")
-                    if head then
-                        local distance = (camera.CFrame.Position - head.Position).magnitude
-                        if distance < closestDistance then
-                            closestPlayer = otherPlayer
-                            closestDistance = distance
-                        end
-                    end
-                end
-            end
+            local closestPlayer = getClosestPlayerToCenter()
             if closestPlayer then
                 aimAtHead(closestPlayer)
             end
