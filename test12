@@ -1,0 +1,98 @@
+-- Services
+local player = game.Players.LocalPlayer
+local playerGui = player.PlayerGui
+
+-- Check if 'ScreenGul' exists, if not, create it
+local screenGui = playerGui:FindFirstChild("ScreenGul")
+if not screenGui then
+    screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ScreenGul"
+    screenGui.Parent = playerGui
+end
+
+-- Create a simple frame to visualize
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 400, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+mainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+mainFrame.Parent = screenGui
+
+-- Create a button for ESP
+local espButton = Instance.new("TextButton")
+espButton.Size = UDim2.new(0, 200, 0, 50)
+espButton.Position = UDim2.new(0.5, -100, 0, 0)
+espButton.Text = "Toggle ESP"
+espButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+espButton.Parent = mainFrame
+
+-- Create a button for Aimbot
+local aimbotButton = Instance.new("TextButton")
+aimbotButton.Size = UDim2.new(0, 200, 0, 50)
+aimbotButton.Position = UDim2.new(0.5, -100, 0, 60)
+aimbotButton.Text = "Toggle Aimbot"
+aimbotButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+aimbotButton.Parent = mainFrame
+
+-- Create a slider for aimbot strength
+local aimbotStrengthSlider = Instance.new("Frame")
+aimbotStrengthSlider.Size = UDim2.new(0, 200, 0, 10)
+aimbotStrengthSlider.Position = UDim2.new(0.5, -100, 0, 120)
+aimbotStrengthSlider.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+aimbotStrengthSlider.Parent = mainFrame
+
+-- Add a draggable slider knob
+local sliderKnob = Instance.new("Frame")
+sliderKnob.Size = UDim2.new(0, 20, 0, 20)
+sliderKnob.Position = UDim2.new(0, 0, 0, -5)
+sliderKnob.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+sliderKnob.Parent = aimbotStrengthSlider
+
+-- Handle slider drag to adjust strength
+local dragging = false
+local offsetX = 0
+sliderKnob.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        offsetX = input.Position.X - sliderKnob.Position.X.Offset
+    end
+end)
+
+sliderKnob.InputChanged:Connect(function(input)
+    if dragging then
+        local newX = input.Position.X - offsetX
+        newX = math.clamp(newX, 0, aimbotStrengthSlider.Size.X.Offset - sliderKnob.Size.X.Offset)
+        sliderKnob.Position = UDim2.new(0, newX, 0, -5)
+    end
+end)
+
+sliderKnob.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- Function to toggle ESP
+local espEnabled = false
+espButton.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    print("ESP Enabled:", espEnabled)
+    -- Here you would implement the logic to show/hide ESP elements
+end)
+
+-- Function to toggle Aimbot
+local aimbotEnabled = false
+aimbotButton.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    print("Aimbot Enabled:", aimbotEnabled)
+    -- Here you would implement the logic for aimbot functionality
+end)
+
+-- Toggle GUI visibility with Right Shift key
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        screenGui.Visible = not screenGui.Visible
+    end
+end)
+
