@@ -1,0 +1,132 @@
+-- Game Setup
+local targets = {}  -- Table to hold all the targets
+local hitTargets = {}  -- Table to track hit targets
+local timer = 60  -- Set the time limit for hitting targets
+local isAimbotOn = false  -- Aimbot toggle
+local isESPOn = false  -- ESP toggle
+local player = game.Players.LocalPlayer  -- Get the local player
+local screenGui = Instance.new("ScreenGui")  -- Create a GUI to display the timer and buttons
+
+-- Create the GUI
+screenGui.Parent = player:WaitForChild("PlayerGui")
+local timerLabel = Instance.new("TextLabel")
+timerLabel.Size = UDim2.new(0, 200, 0, 50)
+timerLabel.Position = UDim2.new(0.5, -100, 0, 10)
+timerLabel.Text = "Time Left: " .. timer
+timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+timerLabel.Parent = screenGui
+
+-- Create Aimbot and ESP Buttons
+local aimbotButton = Instance.new("TextButton")
+aimbotButton.Size = UDim2.new(0, 150, 0, 50)
+aimbotButton.Position = UDim2.new(0.5, -75, 0, 70)
+aimbotButton.Text = "Toggle Aimbot"
+aimbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimbotButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+aimbotButton.Parent = screenGui
+
+local espButton = Instance.new("TextButton")
+espButton.Size = UDim2.new(0, 150, 0, 50)
+espButton.Position = UDim2.new(0.5, -75, 0, 130)
+espButton.Text = "Toggle ESP"
+espButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+espButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+espButton.Parent = screenGui
+
+-- Function to start the timer
+local function startTimer()
+    while timer > 0 do
+        wait(1)
+        timer = timer - 1
+        timerLabel.Text = "Time Left: " .. timer
+    end
+
+    if timer == 0 then
+        print("Time's up! You hit " .. #hitTargets .. " targets.")
+        -- End game logic
+    end
+end
+
+-- Function to highlight targets (ESP)
+local function highlightTargets()
+    for _, target in pairs(targets) do
+        -- Create a highlight effect around each target
+        local highlight = Instance.new("BillboardGui")
+        highlight.Adornee = target
+        highlight.Size = UDim2.new(0, 50, 0, 50)
+        highlight.StudsOffset = Vector3.new(0, 5, 0)
+        highlight.Parent = target
+        local frame = Instance.new("Frame")
+        frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        frame.Size = UDim2.new(1, 0, 1, 0)
+        frame.Parent = highlight
+    end
+end
+
+-- Function to activate aimbot
+local function aimbot()
+    if isAimbotOn then
+        local closestTarget = nil
+        local minDistance = math.huge
+
+        -- Find the closest target
+        for _, target in pairs(targets) do
+            local distance = (target.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            if distance < minDistance then
+                minDistance = distance
+                closestTarget = target
+            end
+        end
+
+        if closestTarget then
+            -- Move the crosshair towards the target's head
+            local targetPosition = closestTarget:FindFirstChild("Head")
+            if targetPosition then
+                -- Move your camera towards the target's head (aim assist)
+                player.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition.Position)
+            end
+        end
+    end
+end
+
+-- Button listeners
+aimbotButton.MouseButton1Click:Connect(function()
+    isAimbotOn = not isAimbotOn
+    aimbotButton.Text = isAimbotOn and "Aimbot On" or "Toggle Aimbot"
+end)
+
+espButton.MouseButton1Click:Connect(function()
+    isESPOn = not isESPOn
+    espButton.Text = isESPOn and "ESP On" or "Toggle ESP"
+    if isESPOn then
+        highlightTargets()  -- Highlight targets when ESP is enabled
+    else
+        for _, target in pairs(targets) do
+            -- Remove ESP highlights from targets
+            local highlight = target:FindFirstChild("BillboardGui")
+            if highlight then
+                highlight:Destroy()
+            end
+        end
+    end
+end)
+
+-- Start the game
+startTimer()
+
+-- Regularly update the aimbot if enabled
+game:GetService("RunService").Heartbeat:Connect(function()
+    if isAimbotOn then
+        aimbot()
+    end
+end)
+
+-- Add targets to the game (example)
+-- You can replace this with your actual target creation logic
+for i = 1, 5 do
+    local target = Instance.new("Part")
+    target.Size = Vector3.new(2, 2, 2)
+    target.Position = Vector3.new(i * 10, 2, 0)
+    target.Parent = workspace
+    table.insert(targets, target)
+end
