@@ -14,6 +14,7 @@ mainFrame.Position = UDim2.new(0, 10, 0, 10)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BackgroundTransparency = 0.5
 mainFrame.Parent = screenGui
+mainFrame.Visible = true  -- Make the frame visible by default
 
 -- Create the Aimbot Toggle Button
 local aimbotToggleButton = Instance.new("TextButton")
@@ -182,6 +183,14 @@ local function aimbotLoop()
         wait(0.01)
     end
 end
+
+-- Function to toggle GUI visibility with Right Shift key
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.RightShift then
+        mainFrame.Visible = not mainFrame.Visible  -- Toggle visibility
+    end
+end)
 
 -- Start the ESP and aimbot loops
 refreshESP()
