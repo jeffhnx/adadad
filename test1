@@ -9,31 +9,63 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 --// Variables
 local AimbotEnabled = false
 local ESPEnabled = false
-local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
+local AimbotStrength = 1.00 -- Sensitivity for how quickly to aim at the target
 local LeftControlHeld = false
 local refreshRate = 1 -- seconds
 local guiVisible = true -- Track if the GUI is visible
 
---// GUI Setup
+--// GUI Setup (Dark Theme)
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = PlayerGui
 screenGui.Enabled = guiVisible -- Initially visible
 
+-- Background Frame for the GUI
+local backgroundFrame = Instance.new("Frame")
+backgroundFrame.Size = UDim2.new(0, 250, 0, 200)
+backgroundFrame.Position = UDim2.new(0.5, -125, 0.5, -100) -- Centered
+backgroundFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- Dark Background
+backgroundFrame.BorderSizePixel = 0
+backgroundFrame.Parent = screenGui
+
+-- ESP Button
 local espButton = Instance.new("TextButton")
 espButton.Size = UDim2.new(0, 200, 0, 50)
-espButton.Position = UDim2.new(0.5, -100, 0, -75) -- Position in the center of the screen
+espButton.Position = UDim2.new(0.5, -100, 0, -60)
 espButton.Text = "Toggle ESP"
 espButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-espButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-espButton.Parent = screenGui
+espButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+espButton.Parent = backgroundFrame
 
+-- Aimbot Button
 local aimbotButton = Instance.new("TextButton")
 aimbotButton.Size = UDim2.new(0, 200, 0, 50)
-aimbotButton.Position = UDim2.new(0.5, -100, 0, -20) -- Position in the center of the screen below ESP button
+aimbotButton.Position = UDim2.new(0.5, -100, 0, 0)
 aimbotButton.Text = "Toggle Aimbot"
 aimbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 aimbotButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-aimbotButton.Parent = screenGui
+aimbotButton.Parent = backgroundFrame
+
+-- Slider Bar for Aimbot Strength
+local sliderFrame = Instance.new("Frame")
+sliderFrame.Size = UDim2.new(0, 200, 0, 50)
+sliderFrame.Position = UDim2.new(0.5, -100, 0, 60)
+sliderFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+sliderFrame.Parent = backgroundFrame
+
+local sliderButton = Instance.new("TextButton")
+sliderButton.Size = UDim2.new(0, 10, 1, 0)
+sliderButton.Position = UDim2.new(0, 0, 0, 0)
+sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sliderButton.Text = ""
+sliderButton.Parent = sliderFrame
+
+local sliderValue = Instance.new("TextLabel")
+sliderValue.Size = UDim2.new(0, 200, 0, 20)
+sliderValue.Position = UDim2.new(0.5, -100, 0, 120)
+sliderValue.Text = "Aimbot Strength: 1.00"
+sliderValue.TextColor3 = Color3.fromRGB(255, 255, 255)
+sliderValue.BackgroundTransparency = 1
+sliderValue.Parent = backgroundFrame
 
 --// ESP Function
 local function CreateESP(player)
@@ -171,10 +203,17 @@ aimbotButton.MouseButton1Click:Connect(function()
     aimbotButton.Text = AimbotEnabled and "Aimbot Enabled" or "Toggle Aimbot"
 end)
 
---// Toggle GUI Visibility with Right Shift
+--// Slider to adjust Aimbot Strength
+sliderButton.MouseMoved:Connect(function()
+    local sliderPosition = math.clamp((sliderButton.Position.X.Offset / sliderFrame.Size.X.Offset), 0, 1)
+    AimbotStrength = sliderPosition * 9.0 + 1.0 -- Strength will range from 1 to 10
+    sliderValue.Text = "Aimbot Strength: " .. string.format("%.2f", AimbotStrength)
+end)
+
+--// Right Shift to show/unshow the GUI
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.RightShift then
-        guiVisible = not guiVisible -- Toggle visibility
+        guiVisible = not guiVisible
         screenGui.Enabled = guiVisible
     end
 end)
