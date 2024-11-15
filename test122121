@@ -14,11 +14,12 @@ if not screenGui then
     screenGui.Parent = playerGui
 end
 
--- Create a simple frame to visualize
+-- Create a smaller, black frame for the GUI
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 400, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
-mainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+mainFrame.Size = UDim2.new(0, 300, 0, 200)  -- Smaller size
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- Black background
+mainFrame.BackgroundTransparency = 0.5  -- Slight transparency for a better look
 mainFrame.Parent = screenGui
 
 -- Create a button for ESP
@@ -26,7 +27,8 @@ local espButton = Instance.new("TextButton")
 espButton.Size = UDim2.new(0, 200, 0, 50)
 espButton.Position = UDim2.new(0.5, -100, 0, 0)
 espButton.Text = "Toggle ESP"
-espButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+espButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Red for ESP
+espButton.TextColor3 = Color3.fromRGB(255, 255, 255)  -- White text
 espButton.Parent = mainFrame
 
 -- Create a button for Aimbot
@@ -34,48 +36,11 @@ local aimbotButton = Instance.new("TextButton")
 aimbotButton.Size = UDim2.new(0, 200, 0, 50)
 aimbotButton.Position = UDim2.new(0.5, -100, 0, 60)
 aimbotButton.Text = "Toggle Aimbot"
-aimbotButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+aimbotButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Green for Aimbot
+aimbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)  -- White text
 aimbotButton.Parent = mainFrame
 
--- Create a bigger slider for aimbot strength
-local aimbotStrengthSlider = Instance.new("Frame")
-aimbotStrengthSlider.Size = UDim2.new(0, 250, 0, 15)  -- Increased size
-aimbotStrengthSlider.Position = UDim2.new(0.5, -125, 0, 120)
-aimbotStrengthSlider.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-aimbotStrengthSlider.Parent = mainFrame
-
--- Add a draggable slider knob
-local sliderKnob = Instance.new("Frame")
-sliderKnob.Size = UDim2.new(0, 20, 0, 20)
-sliderKnob.Position = UDim2.new(0, 0, 0, -5)
-sliderKnob.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-sliderKnob.Parent = aimbotStrengthSlider
-
--- Handle slider drag to adjust strength
-local dragging = false
-local offsetX = 0
-sliderKnob.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        offsetX = input.Position.X - sliderKnob.Position.X.Offset
-    end
-end)
-
-sliderKnob.InputChanged:Connect(function(input)
-    if dragging then
-        local newX = input.Position.X - offsetX
-        newX = math.clamp(newX, 0, aimbotStrengthSlider.Size.X.Offset - sliderKnob.Size.X.Offset)
-        sliderKnob.Position = UDim2.new(0, newX, 0, -5)
-    end
-end)
-
-sliderKnob.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
-end)
-
--- Function to toggle ESP
+-- Handle ESP Toggle
 local espEnabled = false
 local espParts = {}
 
@@ -88,7 +53,6 @@ espButton.MouseButton1Click:Connect(function()
         if otherPlayer ~= player then
             local character = otherPlayer.Character
             if character then
-                -- Create or remove ESP part for each player
                 local head = character:FindFirstChild("Head")
                 if head then
                     local espPart = espParts[otherPlayer]
@@ -105,10 +69,16 @@ espButton.MouseButton1Click:Connect(function()
 
                             local frame = Instance.new("Frame")
                             frame.Size = UDim2.new(1, 0, 1, 0)
-                            frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+                            frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Glow Red
                             frame.BackgroundTransparency = 0.5
                             frame.BorderSizePixel = 0
                             frame.Parent = espPart
+
+                            -- Add Glow Effect
+                            local glow = Instance.new("BloomEffect")
+                            glow.Intensity = 0.5
+                            glow.Size = 24
+                            glow.Parent = camera
 
                             espParts[otherPlayer] = espPart
                         end
@@ -125,14 +95,14 @@ espButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Function to toggle Aimbot
+-- Handle Aimbot Toggle
 local aimbotEnabled = false
 aimbotButton.MouseButton1Click:Connect(function()
     aimbotEnabled = not aimbotEnabled
     print("Aimbot Enabled:", aimbotEnabled)
 end)
 
--- Function to handle right-click aiming (lock on player's head)
+-- Function to aim at player's head (Lock on head)
 local function aimAtHead(targetPlayer)
     if targetPlayer and targetPlayer.Character then
         local targetHead = targetPlayer.Character:FindFirstChild("Head")
