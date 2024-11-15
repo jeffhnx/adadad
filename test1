@@ -4,6 +4,7 @@ local playerGui = player.PlayerGui
 local players = game:GetService("Players")
 local camera = game.Workspace.CurrentCamera
 local UIS = game:GetService("UserInputService")
+local tweenService = game:GetService("TweenService")
 local character = player.Character or player.CharacterAdded:Wait()
 
 -- Create ScreenGui if it doesn't exist
@@ -129,14 +130,25 @@ local function getClosestPlayer()
     return closestPlayer
 end
 
--- Aimbot Logic (locking onto the closest player's head)
+-- Aimbot Logic (locking onto the closest player's head with smoothness)
 local function aimbot()
     if aimbotEnabled and targetPlayer then
         local head = targetPlayer.Character:FindFirstChild("Head")
         if head then
-            -- Lock the camera onto the player's head
+            -- Calculate the position of the head on the screen
             local headPosition = camera:WorldToScreenPoint(head.Position)
-            camera.CFrame = CFrame.lookAt(camera.CFrame.Position, head.Position)
+
+            -- Use TweenService to smoothly move the camera
+            local cameraPosition = camera.CFrame.Position
+            local targetPosition = head.Position
+
+            -- Create a smooth transition from the current camera position to the target (head position)
+            local goal = {}
+            goal.CFrame = CFrame.new(cameraPosition, targetPosition)
+
+            local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
+            local tween = tweenService:Create(camera, tweenInfo, goal)
+            tween:Play()
         end
     end
 end
@@ -167,7 +179,7 @@ end)
 while true do
     if aimbotEnabled and holdingRightClick then
         targetPlayer = getClosestPlayer()  -- Find the closest player to the center of the screen
-        aimbot()  -- Lock onto the player's head
+        aimbot()  -- Lock onto the player's head smoothly
     end
     if espEnabled then
         updateESP()  -- Continuously update ESP
