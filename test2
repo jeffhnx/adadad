@@ -1,0 +1,46 @@
+-- Kill Aura Script
+local player = game.Players.LocalPlayer
+local range = 15 -- Radius of kill aura (adjust as needed)
+local debounce = {} -- To prevent attacking the same player too frequently
+local attackCooldown = 0.5 -- Time in seconds between attacks per player
+
+local function attackTarget(target)
+    if not debounce[target] then
+        debounce[target] = true
+        -- Damage logic (customize this to fit your combat system)
+        if target:FindFirstChild("Humanoid") then
+            target.Humanoid:TakeDamage(20) -- Deal 20 damage to the enemy
+        end
+
+        -- Cooldown for this target
+        task.delay(attackCooldown, function()
+            debounce[target] = nil
+        end)
+    end
+end
+
+local function checkForTargets()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local primaryPart = character:FindFirstChild("HumanoidRootPart")
+
+    if not primaryPart then return end
+
+    for _, targetPlayer in pairs(game.Players:GetPlayers()) do
+        if targetPlayer ~= player then
+            local targetCharacter = targetPlayer.Character
+            if targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart") and targetCharacter:FindFirstChild("Humanoid") then
+                -- Calculate distance between player and target
+                local distance = (primaryPart.Position - targetCharacter.HumanoidRootPart.Position).Magnitude
+
+                if distance <= range and targetCharacter.Humanoid.Health > 0 then
+                    attackTarget(targetCharacter)
+                end
+            end
+        end
+    end
+end
+
+-- Run the kill aura continuously
+game:GetService("RunService").Heartbeat:Connect(function()
+    checkForTargets()
+end)
