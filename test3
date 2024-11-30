@@ -1,0 +1,97 @@
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Create a KillAura button
+KillAura = Combat.CreateButton({
+    Name = "KillAura",
+    Function = function(callback)
+        if callback then
+            local lastNearestHP = 100
+            local Tick = 0
+
+            -- Start the aura loop
+            AuraLoop = RunService.Heartbeat:Connect(function()
+                local nearest = getNearestPlayer(18)
+                if nearest then
+                    -- Check and attack nearest player
+                    if KillAuraMode.Option == "Normal" then
+                        attackPlayer(nearest)
+                    elseif KillAuraMode.Option == "Queue" then
+                        if nearest.Character.Humanoid.Health >= lastNearestHP and Tick > 35 then
+                            attackPlayer(nearest)
+                            Tick = 0
+                        end
+                    elseif KillAuraMode.Option == "Tick" then
+                        if Tick > 24 then
+                            attackPlayer(nearest)
+                        end
+                    end
+                    lastNearestHP = nearest.Character.Humanoid.Health
+                end
+                Tick = Tick + 1
+            end)
+            
+        else
+            -- Stop the aura loop when the button is turned off
+            pcall(function()
+                AuraLoop:Disconnect()
+            end)
+        end
+    end,
+})
+
+-- Function to get the nearest player (use a basic proximity check)
+function getNearestPlayer(range)
+    local nearestPlayer = nil
+    local shortestDistance = range
+
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local distance = (player.Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            if distance < shortestDistance then
+                nearestPlayer = player
+                shortestDistance = distance
+            end
+        end
+    end
+
+    return nearestPlayer
+end
+
+-- Function to attack the nearest player (simple damage simulation)
+function attackPlayer(player)
+    if player and player.Character and player.Character:FindFirstChild("Humanoid") then
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+        humanoid.Health = humanoid.Health - 10  -- Simulating damage, you can replace this with actual attack logic
+    end
+end
+
+-- Dropdown for selecting KillAura method
+KillAuraMode = KillAura.CreateDropdown({
+    Name = "Method",
+    Options = { "Normal", "Queue", "Tick" }
+})
+
+-- Show Box toggle
+ShowBox = KillAura.CreateToggle({
+    Name = "Show Box"
+})
+
+-- Right Shift key to show/hide GUI
+local isGUIVisible = true  -- Start with GUI visible
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed then
+        -- Check if right shift key is pressed
+        if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.LeftShift then
+            isGUIVisible = not isGUIVisible  -- Toggle visibility
+            -- Show or hide the KillAura GUI based on the state
+            if isGUIVisible then
+                KillAura.Show()  -- Show the GUI
+            else
+                KillAura.Hide()  -- Hide the GUI
+            end
+        end
+    end
+end)
