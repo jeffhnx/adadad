@@ -1,0 +1,65 @@
+--// Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+--// Configurations
+local AimCompensationEnabled = true
+local AimbotKey = Enum.UserInputType.MouseButton1 -- Left-click for shooting
+local TargetPart = "Head" -- Target body part
+local Smoothness = 0.2 -- How smoothly the mouse moves to target
+
+--// Randomization (Recoil and Spread)
+local function GetRandomSpread()
+    local spreadX = math.random(-50, 50) / 100 -- Adjust these values for tighter or wider spread
+    local spreadY = math.random(-50, 50) / 100
+    return Vector2.new(spreadX, spreadY)
+end
+
+--// Target Selection
+local function GetClosestTarget()
+    local closestPlayer = nil
+    local shortestDistance = math.huge
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(TargetPart) then
+            if player.Team ~= LocalPlayer.Team then
+                local targetPosition = Camera:WorldToViewportPoint(player.Character[TargetPart].Position)
+                local mousePosition = Vector2.new(Mouse.X, Mouse.Y)
+                local distance = (mousePosition - Vector2.new(targetPosition.X, targetPosition.Y)).Magnitude
+
+                if distance < shortestDistance then
+                    closestPlayer = player
+                    shortestDistance = distance
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
+--// Aim and Compensate
+local function CompensateRecoil(target)
+    if not target or not target.Character or not target.Character:FindFirstChild(TargetPart) then return end
+
+    -- Get the target's position and add random spread
+    local targetPosition = Camera:WorldToViewportPoint(target.Character[TargetPart].Position)
+    local spread = GetRandomSpread()
+    local compensatedPosition = Vector2.new(targetPosition.X + spread.X * 100, targetPosition.Y + spread.Y * 100)
+
+    -- Smooth mouse movement towards the compensated position
+    local currentMousePosition = UserInputService:GetMouseLocation()
+    local moveTo = currentMousePosition:Lerp(compensatedPosition, Smoothness)
+    mousemoverel(moveTo.X - currentMousePosition.X, moveTo.Y - currentMousePosition.Y) -- Move mouse relative to current position
+end
+
+--// Input Listener
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == AimbotKey and AimCompensationEnabled then
+        local target = GetClosestTarget()
+        CompensateRecoil(target)
+    end
+end)
