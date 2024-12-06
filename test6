@@ -1,17 +1,38 @@
+--// Services
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
 --// Variables
+local AimbotEnabled = true
+local ESPEnabled = true
+local BhopEnabled = true
+local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
+local LeftControlHeld = false
+local IsRunning = false
+local refreshRate = 1 -- seconds
+local CurrentWeapon = "Rifle" -- Default weapon
+local MovementSpreadMultiplier = 2 -- Multiplier for spread when moving
+local DebugEnabled = true -- Debug visuals for bullet correction
 local WeaponSpread = {
     ["Pistol"] = 1.5,
     ["SMG"] = 3,
     ["Rifle"] = 2,
     ["Sniper"] = 0.5,
-} -- Adjust spread values for different weapon types
+}
 
-local CurrentWeapon = "Rifle" -- Set the default weapon
-local MovementSpreadMultiplier = 2 -- Multiplier for spread when moving
-local IsRunning = false -- Tracks if the player is running
-local DebugEnabled = true -- Enable/Disable visual debugging
+--// Function for Dynamic Bullet Spread
+local function GetDynamicSpread()
+    local baseSpread = WeaponSpread[CurrentWeapon] or 2
+    local movementSpread = IsRunning and (baseSpread * MovementSpreadMultiplier) or baseSpread
+    local spreadX = math.random(-movementSpread * 10, movementSpread * 10) / 100
+    local spreadY = math.random(-movementSpread * 10, movementSpread * 10) / 100
+    return Vector3.new(spreadX, spreadY, 0)
+end
 
---// Debugging Function
+--// Debugging Function for Spread
 local function DebugSpread(targetPosition, bulletSpread, correctedPosition)
     if DebugEnabled then
         local debugPart = Instance.new("Part")
@@ -21,33 +42,24 @@ local function DebugSpread(targetPosition, bulletSpread, correctedPosition)
         debugPart.Anchored = true
         debugPart.CanCollide = false
 
-        -- Debug for actual bullet spread position
+        -- Actual spread position
         debugPart.Position = targetPosition + bulletSpread
-        debugPart.BrickColor = BrickColor.new("Bright red") -- Red for spread
+        debugPart.BrickColor = BrickColor.new("Bright red")
         debugPart.Parent = workspace
 
-        -- Debug for corrected aim position
+        -- Corrected aim position
         local correctedPart = debugPart:Clone()
         correctedPart.Position = correctedPosition
-        correctedPart.BrickColor = BrickColor.new("Bright green") -- Green for corrected aim
+        correctedPart.BrickColor = BrickColor.new("Bright green")
         correctedPart.Parent = workspace
 
-        -- Remove debug parts after a short delay
+        -- Remove after a short time
         game:GetService("Debris"):AddItem(debugPart, 1)
         game:GetService("Debris"):AddItem(correctedPart, 1)
     end
 end
 
---// Function to calculate dynamic bullet spread
-local function GetDynamicSpread()
-    local baseSpread = WeaponSpread[CurrentWeapon] or 2 -- Default spread if weapon isn't listed
-    local movementSpread = IsRunning and (baseSpread * MovementSpreadMultiplier) or baseSpread
-    local spreadX = math.random(-movementSpread * 10, movementSpread * 10) / 100
-    local spreadY = math.random(-movementSpread * 10, movementSpread * 10) / 100
-    return Vector3.new(spreadX, spreadY, 0)
-end
-
---// Modified Aimbot Function
+--// Aimbot Function
 local function Aimbot()
     if LeftControlHeld and AimbotEnabled then
         local closestPlayer = nil
@@ -75,32 +87,82 @@ local function Aimbot()
         if closestPlayer then
             local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0)
             local bulletSpread = GetDynamicSpread()
-            local correctedPosition = targetPosition - bulletSpread -- Correct aim to counter spread
+            local correctedPosition = targetPosition - bulletSpread -- Adjust aim for spread
 
             -- Smoothly adjust camera to corrected position
             local cameraCFrame = CFrame.new(Camera.CFrame.Position, correctedPosition)
             Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength)
 
-            -- Debug spread positions
+            -- Debug spread
             DebugSpread(targetPosition, bulletSpread, correctedPosition)
         end
     end
 end
 
---// Detect Running State
+--// Bunny Hop Function
+local function Bhop()
+    if BhopEnabled and UserInputService:IsKeyDown(Enum.KeyCode.Space) and LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid.FloorMaterial ~= Enum.Material.Air then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end
+
+--// ESP Function
+local function CreateESP(player)
+    local highlight = Instance.new("Highlight")
+    highlight.Parent = player.Character
+    highlight.Adornee = player.Character
+
+    -- Team color coding
+    if player.Team == LocalPlayer.Team then
+        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
+    else
+        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
+    end
+
+    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+    highlight.Enabled = ESPEnabled
+
+    -- Remove ESP when the player leaves
+    player.CharacterRemoving:Connect(function()
+        highlight:Destroy()
+    end)
+end
+
+--// Refresh ESP Periodically
+local function RefreshESP()
+    while wait(refreshRate) do
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                local highlight = player.Character:FindFirstChildOfClass("Highlight")
+                if not highlight then
+                    CreateESP(player)
+                end
+            end
+        end
+    end
+end
+
+--// Detect Key Events
 UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.LeftShift then
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        LeftControlHeld = true
+    elseif input.KeyCode == Enum.KeyCode.LeftShift then
         IsRunning = true
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.LeftShift then
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        LeftControlHeld = false
+    elseif input.KeyCode == Enum.KeyCode.LeftShift then
         IsRunning = false
     end
 end)
 
---// Weapon Switching Function (Example Usage)
+--// Weapon Switching (Example)
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.One then
         CurrentWeapon = "Pistol"
@@ -113,7 +175,24 @@ UserInputService.InputBegan:Connect(function(input)
     end
 end)
 
+--// Initial ESP Setup
+for _, player in pairs(Players:GetPlayers()) do
+    if player.Character then
+        CreateESP(player)
+    end
+end
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        wait(1) -- Wait for character to load
+        CreateESP(player)
+    end)
+end)
+
 --// Run Service Loop
 RunService.RenderStepped:Connect(function()
     Aimbot()
+    Bhop()
 end)
+
+--// Start ESP Refresh Coroutine
+coroutine.wrap(RefreshESP)()
