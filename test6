@@ -1,0 +1,150 @@
+-- Dependencies
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+
+-- Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 300, 0, 600)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -300)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+-- Dragging Functionality
+local dragging = false
+local dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end
+end)
+MainFrame.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+MainFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- Title
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "Game Utility GUI"
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 18
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+Title.Parent = MainFrame
+
+-- Scrolling Frame for Options
+local OptionsFrame = Instance.new("ScrollingFrame")
+OptionsFrame.Size = UDim2.new(1, 0, 1, -40)
+OptionsFrame.Position = UDim2.new(0, 0, 0, 40)
+OptionsFrame.CanvasSize = UDim2.new(0, 0, 0, 2000) -- Enough height for all features
+OptionsFrame.BackgroundTransparency = 1
+OptionsFrame.Parent = MainFrame
+
+-- Utility Functions
+function CreateToggle(name, parent, callback)
+    local Toggle = Instance.new("TextButton")
+    Toggle.Size = UDim2.new(1, -10, 0, 30)
+    Toggle.Position = UDim2.new(0, 5, 0, 0)
+    Toggle.Text = name .. " [OFF]"
+    Toggle.Font = Enum.Font.SourceSans
+    Toggle.TextSize = 14
+    Toggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    Toggle.Parent = parent
+
+    local isOn = false
+    Toggle.MouseButton1Click:Connect(function()
+        isOn = not isOn
+        Toggle.Text = name .. (isOn and " [ON]" or " [OFF]")
+        callback(isOn)
+    end)
+end
+
+function CreateSlider(name, parent, min, max, callback)
+    local SliderFrame = Instance.new("Frame")
+    SliderFrame.Size = UDim2.new(1, -10, 0, 50)
+    SliderFrame.Position = UDim2.new(0, 5, 0, 0)
+    SliderFrame.BackgroundTransparency = 1
+    SliderFrame.Parent = parent
+
+    local SliderLabel = Instance.new("TextLabel")
+    SliderLabel.Size = UDim2.new(1, -10, 0, 20)
+    SliderLabel.Position = UDim2.new(0, 0, 0, 0)
+    SliderLabel.Text = name .. ": " .. min
+    SliderLabel.Font = Enum.Font.SourceSans
+    SliderLabel.TextSize = 14
+    SliderLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    SliderLabel.BackgroundTransparency = 1
+    SliderLabel.Parent = SliderFrame
+
+    local SliderBar = Instance.new("Frame")
+    SliderBar.Size = UDim2.new(1, -10, 0, 10)
+    SliderBar.Position = UDim2.new(0, 0, 1, -20)
+    SliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    SliderBar.Parent = SliderFrame
+
+    local SliderButton = Instance.new("Frame")
+    SliderButton.Size = UDim2.new(0, 10, 1, 0)
+    SliderButton.Position = UDim2.new(0, 0, 0, 0)
+    SliderButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    SliderButton.Parent = SliderBar
+
+    local dragging = false
+    SliderButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+        end
+    end)
+    SliderButton.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    SliderButton.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local relativePos = math.clamp(input.Position.X - SliderBar.AbsolutePosition.X, 0, SliderBar.AbsoluteSize.X)
+            SliderButton.Position = UDim2.new(0, relativePos, 0, 0)
+            local value = math.floor(((relativePos / SliderBar.AbsoluteSize.X) * (max - min)) + min)
+            SliderLabel.Text = name .. ": " .. value
+            callback(value)
+        end
+    end)
+end
+
+-- Visuals
+CreateToggle("3D Box", OptionsFrame, function(enabled) print("3D Box:", enabled) end)
+CreateToggle("2D Box", OptionsFrame, function(enabled) print("2D Box:", enabled) end)
+CreateToggle("Skeleton ESP", OptionsFrame, function(enabled) print("Skeleton ESP:", enabled) end)
+CreateToggle("Health & Armor Bar", OptionsFrame, function(enabled) print("Health & Armor:", enabled) end)
+CreateToggle("Tracers [Snaplines]", OptionsFrame, function(enabled) print("Snaplines:", enabled) end)
+CreateToggle("Chams & Glow", OptionsFrame, function(enabled) print("Chams & Glow:", enabled) end)
+
+-- Aimbot
+CreateToggle("Perfect Aimbot", OptionsFrame, function(enabled) print("Perfect Aimbot:", enabled) end)
+CreateSlider("FOV", OptionsFrame, 1, 360, function(value) print("FOV:", value) end)
+CreateSlider("Smooth", OptionsFrame, 1, 100, function(value) print("Smoothness:", value) end)
+CreateToggle("Aim360", OptionsFrame, function(enabled) print("Aim360:", enabled) end)
+CreateToggle("Recoil Control", OptionsFrame, function(enabled) print("Recoil Control:", enabled) end)
+
+-- Misc
+CreateToggle("Bunny Hop", OptionsFrame, function(enabled) print("Bunny Hop:", enabled) end)
+CreateToggle("Spinbot", OptionsFrame, function(enabled) print("Spinbot:", enabled) end)
+CreateToggle("Third Person", OptionsFrame, function(enabled) print("Third Person:", enabled) end)
+CreateToggle("Unlock All Skins", OptionsFrame, function(enabled) print("Unlock All Skins:", enabled) end)
+CreateToggle("Skip Tutorial", OptionsFrame, function(enabled) print("Skip Tutorial:", enabled) end)
