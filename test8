@@ -108,8 +108,9 @@ end)
 --// Lock Camera to First-Person Mode
 local function LockCameraToFirstPerson()
     if CameraLocked then
-        Camera.CameraType = Enum.CameraType.Scriptable
-        Camera.CFrame = Camera.CFrame
+        Camera.CameraType = Enum.CameraType.Custom
+        -- Ensure the camera stays in first-person mode by updating its position.
+        Camera.CameraSubject = LocalPlayer.Character:WaitForChild("Head") -- Track the player's head
     end
 end
 
