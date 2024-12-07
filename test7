@@ -1,0 +1,36 @@
+--// Services
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+--// Variables
+local CameraDistance = 10 -- Distance from the player's character
+local CameraHeight = 5 -- Height of the camera above the player
+local ThirdPersonEnabled = true -- Toggle for third-person camera
+
+--// Function to Set Camera to Third Person
+local function SetThirdPersonCamera()
+    if ThirdPersonEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local humanoidRootPart = LocalPlayer.Character.HumanoidRootPart
+
+        -- Calculate the desired camera position
+        local cameraPosition = humanoidRootPart.Position
+            - humanoidRootPart.CFrame.LookVector * CameraDistance -- Push the camera back
+            + Vector3.new(0, CameraHeight, 0) -- Move the camera up
+
+        -- Smoothly move the camera to the calculated position
+        Camera.CFrame = CFrame.new(cameraPosition, humanoidRootPart.Position)
+    end
+end
+
+--// Lock Third-Person Camera on Render Step
+RunService.RenderStepped:Connect(function()
+    SetThirdPersonCamera()
+end)
+
+--// Character Added Handler
+LocalPlayer.CharacterAdded:Connect(function()
+    repeat wait() until LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    SetThirdPersonCamera()
+end)
