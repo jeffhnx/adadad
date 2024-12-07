@@ -19,7 +19,7 @@ local function BunnyHop()
         local humanoid = LocalPlayer.Character.Humanoid
         if humanoid:GetState() == Enum.HumanoidStateType.Running then
             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            humanoid.WalkSpeed = 24 -- Set movement speed to 24
+            humanoid.WalkSpeed = 27 -- Set movement speed to 27
         else
             humanoid.WalkSpeed = 16 -- Reset to normal speed when not bunny hopping
         end
