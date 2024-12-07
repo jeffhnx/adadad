@@ -89,7 +89,7 @@ local function LockCameraToFirstPerson()
         Camera.CameraType = Enum.CameraType.Custom
         -- Adjust the camera's position to be slightly behind and above the player's head
         local head = LocalPlayer.Character:WaitForChild("Head")
-        local cameraOffset = Vector3.new(0, 0.5, 1) -- Adjust these values to get the desired distance
+        local cameraOffset = Vector3.new(0, 1, 3) -- Adjusted to move the camera farther away (Y: higher, Z: further)
         Camera.CFrame = CFrame.new(head.Position + cameraOffset, head.Position)
         Camera.CameraSubject = head -- Keep the camera following the head
     end
