@@ -1,4 +1,4 @@
---// Aimbot Function with 5x distance
+--// Aimbot Function with 5x farther targeting
 local function Aimbot()
     if LeftControlHeld and AimbotEnabled then
         local closestPlayer = nil
@@ -11,11 +11,16 @@ local function Aimbot()
                 if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
                     -- Check for team and only aim at players not on the same team
                     if player.Team ~= LocalPlayer.Team then
-                        -- Target position adjusted to be 5 times farther
-                        local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0)
+                        -- Get the target position
+                        local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at head level
+
+                        -- Calculate the direction to the target
                         local direction = (targetPosition - Camera.CFrame.Position).unit
-                        local extendedPosition = Camera.CFrame.Position + direction * 5 -- Multiply direction by 5 for farther aiming
                         
+                        -- Extend the position by 5x farther
+                        local extendedPosition = Camera.CFrame.Position + direction * 5 -- 5x farther
+
+                        -- Convert the extended position to screen space
                         local screenPosition, onScreen = Camera:WorldToViewportPoint(extendedPosition)
 
                         if onScreen then
@@ -34,12 +39,14 @@ local function Aimbot()
 
         -- Aim at the closest player (360 degree aiming logic)
         if closestPlayer then
-            -- Target the adjusted position (5x farther away)
-            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0)
+            -- Get the position of the closest player, extended 5x farther
+            local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at head level
             local direction = (targetPosition - Camera.CFrame.Position).unit
-            local extendedPosition = Camera.CFrame.Position + direction * 5
+            local extendedPosition = Camera.CFrame.Position + direction * 5 -- 5x farther
+
+            -- Smoothly aim towards the extended position
             local cameraCFrame = CFrame.new(Camera.CFrame.Position, extendedPosition)
-            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition
+            Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition towards the target
         end
     end
 end
