@@ -12,6 +12,10 @@ local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
 local LeftControlHeld = false
 local SpaceHeld = false -- For bunny hopping
 local refreshRate = 1 -- seconds
+local Gravity = 150 -- Custom gravity to make jumps last longer (default is 196.2)
+
+-- Set custom gravity
+workspace.Gravity = Gravity
 
 --// BHop Function
 local function BunnyHop()
@@ -20,8 +24,7 @@ local function BunnyHop()
         if humanoid:GetState() == Enum.HumanoidStateType.Running then
             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
             humanoid.WalkSpeed = 27 -- Set movement speed to 27
-        else
-            humanoid.WalkSpeed = 16 -- Reset to normal speed when not bunny hopping
+            humanoid.JumpPower = 70 -- Increase jump power for higher and longer jumps (default is 50)
         end
     end
 end
