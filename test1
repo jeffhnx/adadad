@@ -1,0 +1,127 @@
+--// Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+--// Main GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CustomGUI"
+ScreenGui.Parent = game.CoreGui
+
+-- Create a frame for the GUI
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0.3, 0, 0.6, 0) -- Adjust dimensions
+MainFrame.Position = UDim2.new(0.35, 0, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+-- Add a title
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0.1, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Game Enhancements GUI"
+Title.TextScaled = true
+Title.Font = Enum.Font.SourceSansBold
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Parent = MainFrame
+
+-- Add scrolling frame for the options
+local OptionsFrame = Instance.new("ScrollingFrame")
+OptionsFrame.Size = UDim2.new(1, 0, 0.9, 0)
+OptionsFrame.Position = UDim2.new(0, 0, 0.1, 0)
+OptionsFrame.CanvasSize = UDim2.new(0, 0, 2, 0) -- Adjust based on content
+OptionsFrame.ScrollBarThickness = 8
+OptionsFrame.BackgroundTransparency = 1
+OptionsFrame.Parent = MainFrame
+
+-- Function to create toggle buttons
+local function CreateToggle(name, parent, callback)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(0.9, 0, 0.05, 0)
+    Button.Position = UDim2.new(0.05, 0, 0, 0)
+    Button.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    Button.Text = name
+    Button.TextColor3 = Color3.new(1, 1, 1)
+    Button.Font = Enum.Font.SourceSansBold
+    Button.TextScaled = true
+    Button.Parent = parent
+    
+    local isEnabled = false
+    Button.MouseButton1Click:Connect(function()
+        isEnabled = not isEnabled
+        Button.BackgroundColor3 = isEnabled and Color3.new(0, 1, 0) or Color3.new(0.3, 0.3, 0.3)
+        if callback then callback(isEnabled) end
+    end)
+end
+
+-- Add feature toggles
+local function SetupGUI()
+    local features = {
+        "3D/2D/Cornered Box",
+        "Head Box",
+        "Health & Armor Bar",
+        "Tracers [ Snaplines ]",
+        "Skeleton",
+        "Chams & Glow",
+        "Agent & Weapon",
+        "Dropped Gun & Traps",
+        "Agent Icon",
+        "Distance",
+        "Spike Box & Info",
+        "Perfect Aimbot",
+        "No Spread",
+        "pSilent Aimbot",
+        "Auto Fire",
+        "Visible Check",
+        "Aim360",
+        "Aimlock",
+        "Adjustable Fov",
+        "Recoil Control",
+        "Aim Hitbox",
+        "Target Line",
+        "Bunny Hop",
+        "Spinbot",
+        "Big Gun",
+        "FreeCam",
+        "FastCrouch",
+        "Thirdperson",
+        "Skin Changer",
+        "Titan Enemy",
+        "Skip Tutorial",
+        "Unlock All Skins",
+        "Rainbow Fresnel",
+        "Wireframe Mode",
+        "Customizable Enemy Fresnel",
+        "Customizable Player Fresnel",
+        "Adjustable Hand Material"
+    }
+
+    for i, feature in pairs(features) do
+        CreateToggle(feature, OptionsFrame, function(enabled)
+            print(feature .. " is now " .. (enabled and "ON" or "OFF"))
+            -- Implement functionality for each feature here
+        end)
+        -- Offset each button vertically
+        OptionsFrame.CanvasSize = UDim2.new(0, 0, 0, i * 50)
+    end
+end
+
+-- Run GUI setup
+SetupGUI()
+
+-- Example: Implementing Bunny Hop functionality
+local bunnyHopEnabled = false
+UserInputService.InputBegan:Connect(function(input)
+    if bunnyHopEnabled and input.KeyCode == Enum.KeyCode.Space then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- Bind BunnyHop toggle to functionality
+CreateToggle("BunnyHop", OptionsFrame, function(enabled)
+    bunnyHopEnabled = enabled
+end)
