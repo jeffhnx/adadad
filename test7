@@ -54,10 +54,11 @@ OptionsFrame.Size = UDim2.new(1, 0, 1, -40)
 OptionsFrame.Position = UDim2.new(0, 0, 0, 40)
 OptionsFrame.CanvasSize = UDim2.new(0, 0, 0, 2000) -- Enough height for all features
 OptionsFrame.BackgroundTransparency = 1
+OptionsFrame.ScrollBarThickness = 6
 OptionsFrame.Parent = MainFrame
 
 -- Utility Functions
-function CreateToggle(name, parent, callback)
+local function CreateToggle(name, parent, callback)
     local Toggle = Instance.new("TextButton")
     Toggle.Size = UDim2.new(1, -10, 0, 30)
     Toggle.Position = UDim2.new(0, 5, 0, 0)
@@ -76,7 +77,7 @@ function CreateToggle(name, parent, callback)
     end)
 end
 
-function CreateSlider(name, parent, min, max, callback)
+local function CreateSlider(name, parent, min, max, callback)
     local SliderFrame = Instance.new("Frame")
     SliderFrame.Size = UDim2.new(1, -10, 0, 50)
     SliderFrame.Position = UDim2.new(0, 5, 0, 0)
@@ -127,24 +128,18 @@ function CreateSlider(name, parent, min, max, callback)
     end)
 end
 
--- Visuals
-CreateToggle("3D Box", OptionsFrame, function(enabled) print("3D Box:", enabled) end)
-CreateToggle("2D Box", OptionsFrame, function(enabled) print("2D Box:", enabled) end)
-CreateToggle("Skeleton ESP", OptionsFrame, function(enabled) print("Skeleton ESP:", enabled) end)
-CreateToggle("Health & Armor Bar", OptionsFrame, function(enabled) print("Health & Armor:", enabled) end)
-CreateToggle("Tracers [Snaplines]", OptionsFrame, function(enabled) print("Snaplines:", enabled) end)
-CreateToggle("Chams & Glow", OptionsFrame, function(enabled) print("Chams & Glow:", enabled) end)
+-- Add all the requested features
+local features = {
+    "3D/2D Box", "Head Box", "Health & Armor Bar", "Tracers", "Skeleton ESP",
+    "Chams & Glow", "Agent Name", "Weapon Name", "Distance", "Spike Info",
+    "Perfect Aimbot", "No Spread", "pSilent Aimbot", "Auto Fire",
+    "Aimlock", "Aim360", "Adjustable FOV", "Recoil Control", "Bunny Hop",
+    "Spinbot", "Third Person", "Unlock Skins", "Skip Tutorial",
+}
 
--- Aimbot
-CreateToggle("Perfect Aimbot", OptionsFrame, function(enabled) print("Perfect Aimbot:", enabled) end)
-CreateSlider("FOV", OptionsFrame, 1, 360, function(value) print("FOV:", value) end)
-CreateSlider("Smooth", OptionsFrame, 1, 100, function(value) print("Smoothness:", value) end)
-CreateToggle("Aim360", OptionsFrame, function(enabled) print("Aim360:", enabled) end)
-CreateToggle("Recoil Control", OptionsFrame, function(enabled) print("Recoil Control:", enabled) end)
-
--- Misc
-CreateToggle("Bunny Hop", OptionsFrame, function(enabled) print("Bunny Hop:", enabled) end)
-CreateToggle("Spinbot", OptionsFrame, function(enabled) print("Spinbot:", enabled) end)
-CreateToggle("Third Person", OptionsFrame, function(enabled) print("Third Person:", enabled) end)
-CreateToggle("Unlock All Skins", OptionsFrame, function(enabled) print("Unlock All Skins:", enabled) end)
-CreateToggle("Skip Tutorial", OptionsFrame, function(enabled) print("Skip Tutorial:", enabled) end)
+-- Loop through and create toggles for each feature
+for _, feature in ipairs(features) do
+    CreateToggle(feature, OptionsFrame, function(state)
+        print(feature .. " is now " .. (state and "enabled" or "disabled"))
+    end)
+end
