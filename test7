@@ -13,6 +13,7 @@ local LeftControlHeld = false
 local SpaceHeld = false -- For bunny hopping
 local refreshRate = 1 -- seconds
 local Aim360Enabled = true -- Enable 360 degree aiming
+local CameraLocked = true -- Lock camera to first-person
 
 --// BHop Function
 local function BunnyHop()
@@ -104,10 +105,19 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
+--// Lock Camera to First-Person Mode
+local function LockCameraToFirstPerson()
+    if CameraLocked then
+        Camera.CameraType = Enum.CameraType.Scriptable
+        Camera.CFrame = Camera.CFrame
+    end
+end
+
 --// Run Service Loop
 RunService.RenderStepped:Connect(function()
     Aimbot()
     BunnyHop()
+    LockCameraToFirstPerson() -- Ensure first-person view is locked
 end)
 
 --// Setup ESP for all players and refresh highlights every second
