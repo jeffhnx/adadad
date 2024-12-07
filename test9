@@ -11,9 +11,8 @@ local ESPEnabled = true
 local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
 local LeftControlHeld = false
 local SpaceHeld = false -- For bunny hopping
+local CameraLocked = true -- Lock the camera to first-person mode
 local refreshRate = 1 -- seconds
-local Aim360Enabled = true -- Enable 360 degree aiming
-local CameraLocked = true -- Lock camera to first-person
 
 --// BHop Function
 local function BunnyHop()
@@ -55,36 +54,44 @@ local function Aimbot()
         local closestPlayer = nil
         local closestDistance = math.huge
 
-        -- Check for 360-degree aim
-        if Aim360Enabled then
-            for _, player in pairs(Players:GetPlayers()) do
-                -- Check if the player is not the local player and has a character with a head
-                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                    -- Check for team and only aim at players not on the same team
-                    if player.Team ~= LocalPlayer.Team then
-                        local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at hair level
-                        local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
+        for _, player in pairs(Players:GetPlayers()) do
+            -- Check if the player is not the local player and has a character with a head
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                -- Check for team and only aim at players not on the same team
+                if player.Team ~= LocalPlayer.Team then
+                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at hair level
+                    local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
 
-                        if onScreen then
-                            local mousePosition = UserInputService:GetMouseLocation()
-                            local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+                    if onScreen then
+                        local mousePosition = UserInputService:GetMouseLocation()
+                        local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
 
-                            if distance < closestDistance then
-                                closestDistance = distance
-                                closestPlayer = player
-                            end
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            closestPlayer = player
                         end
                     end
                 end
             end
         end
 
-        -- Aim at the closest player (360 degree aiming logic)
         if closestPlayer then
             local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at hair level
             local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
             Camera.CFrame = cameraCFrame:Lerp(Camera.CFrame, AimbotStrength) -- Smooth transition
         end
+    end
+end
+
+--// Lock Camera to First-Person Mode with Distance Adjustment
+local function LockCameraToFirstPerson()
+    if CameraLocked then
+        Camera.CameraType = Enum.CameraType.Custom
+        -- Adjust the camera's position to be slightly behind and above the player's head
+        local head = LocalPlayer.Character:WaitForChild("Head")
+        local cameraOffset = Vector3.new(0, 0.5, 1) -- Adjust these values to get the desired distance
+        Camera.CFrame = CFrame.new(head.Position + cameraOffset, head.Position)
+        Camera.CameraSubject = head -- Keep the camera following the head
     end
 end
 
@@ -105,20 +112,11 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
---// Lock Camera to First-Person Mode
-local function LockCameraToFirstPerson()
-    if CameraLocked then
-        Camera.CameraType = Enum.CameraType.Custom
-        -- Ensure the camera stays in first-person mode by updating its position.
-        Camera.CameraSubject = LocalPlayer.Character:WaitForChild("Head") -- Track the player's head
-    end
-end
-
 --// Run Service Loop
 RunService.RenderStepped:Connect(function()
     Aimbot()
     BunnyHop()
-    LockCameraToFirstPerson() -- Ensure first-person view is locked
+    LockCameraToFirstPerson() -- Lock the camera in first-person with adjusted distance
 end)
 
 --// Setup ESP for all players and refresh highlights every second
