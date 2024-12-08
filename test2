@@ -12,9 +12,7 @@ local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
 local LeftControlHeld = false -- Left Control to activate aimbot
 local SpaceHeld = false -- For bunny hopping
 local refreshRate = 1 -- seconds
-local BhopSpeed = 600 -- Bunny hop speed
-local ESPDistance = 100 -- Distance for ESP visibility (in studs)
-local LastKnownLocations = {} -- Tracks last known locations of enemies
+local BhopSpeed = 600 -- Set bunny hop speed to 600
 
 --// BHop Function
 local function BunnyHop()
@@ -30,56 +28,36 @@ local function BunnyHop()
 end
 
 --// ESP Function
-local function CreateESP(player)
-    local highlight = Instance.new("Highlight")
-    highlight.Parent = player.Character
-    highlight.Adornee = player.Character
-
-    -- Set highlight properties
-    highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
-    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
-    highlight.Enabled = false -- Start as disabled
-
-    return highlight
-end
-
-local function UpdateESP(player, highlight)
-    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
-
-    local enemyRoot = player.Character.HumanoidRootPart
-    local distance = (enemyRoot.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-    if distance <= ESPDistance then
-        highlight.Enabled = ESPEnabled -- Enable ESP when within distance
-        LastKnownLocations[player] = nil -- Reset last known location
-    else
-        highlight.Enabled = false -- Disable ESP when out of range
-        -- Store last known location
-        if not LastKnownLocations[player] then
-            LastKnownLocations[player] = enemyRoot.Position
-        end
-    end
-end
-
-local function ShowLastKnownLocations()
-    for player, position in pairs(LastKnownLocations) do
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local billboard = player.Character:FindFirstChild("LastLocationBillboard") or Instance.new("BillboardGui")
-            billboard.Name = "LastLocationBillboard"
-            billboard.Adornee = nil -- Set it to no specific part
-            billboard.Size = UDim2.new(0, 200, 0, 50)
-            billboard.StudsOffset = Vector3.new(0, 2, 0)
-            billboard.AlwaysOnTop = true
-            billboard.Parent = workspace
-            -- Add text label to display "Last Known Location"
-            local textLabel = billboard:FindFirstChild("TextLabel") or Instance.new("TextLabel")
-            textLabel.Size = UDim2.new(1, 0, 1, 0)
-            textLabel.BackgroundTransparency = 1
-            textLabel.TextColor3 = Color3.new(1, 0, 0)
-            textLabel.Text = "Last Known Location"
-            textLabel.Parent = billboard
-            -- Position it at the last known location
-            billboard.Position = position
+local function CreateSkeletonESP(character)
+    -- Draw a line between body parts to create a skeleton
+    local parts = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
+    local connections = {
+        {"Head", "Torso"},
+        {"Torso", "Left Arm"},
+        {"Torso", "Right Arm"},
+        {"Torso", "Left Leg"},
+        {"Torso", "Right Leg"}
+    }
+    for _, connection in pairs(connections) do
+        local startPart = character:FindFirstChild(connection[1])
+        local endPart = character:FindFirstChild(connection[2])
+        if startPart and endPart then
+            local line = Drawing.new("Line")
+            line.Visible = ESPEnabled
+            line.From = Camera:WorldToViewportPoint(startPart.Position)
+            line.To = Camera:WorldToViewportPoint(endPart.Position)
+            line.Color = Color3.fromRGB(255, 0, 0) -- Red skeleton
+            line.Thickness = 2
+            
+            -- Update line positions in real time
+            RunService.RenderStepped:Connect(function()
+                if character and startPart and endPart then
+                    line.From = Camera:WorldToViewportPoint(startPart.Position)
+                    line.To = Camera:WorldToViewportPoint(endPart.Position)
+                else
+                    line:Remove()
+                end
+            end)
         end
     end
 end
@@ -140,29 +118,32 @@ end)
 RunService.RenderStepped:Connect(function()
     Aimbot()
     BunnyHop()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local highlight = player.Character and player.Character:FindFirstChildOfClass("Highlight")
-            if highlight then
-                UpdateESP(player, highlight)
+end)
+
+--// Setup ESP for all players and refresh skeletons every second
+local function RefreshESP()
+    while wait(refreshRate) do
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                CreateSkeletonESP(player.Character) -- Create skeleton ESP
             end
         end
     end
-    ShowLastKnownLocations()
-end)
+end
 
---// Setup ESP for all players and refresh highlights every second
+--// Start the ESP refresh coroutine
+coroutine.wrap(RefreshESP)()
+
+--// Initial ESP setup for players
 local function SetupPlayer(player)
     player.CharacterAdded:Connect(function(character)
         -- Wait for the character to fully load
-        character:WaitForChild("HumanoidRootPart")
-        local highlight = CreateESP(player)
-        UpdateESP(player, highlight)
+        character:WaitForChild("Head")
+        CreateSkeletonESP(character) -- Create skeleton ESP for new player character
     end)
 
     if player.Character then
-        local highlight = CreateESP(player)
-        UpdateESP(player, highlight)
+        CreateSkeletonESP(player.Character) -- Create skeleton ESP for existing character
     end
 end
 
@@ -173,5 +154,5 @@ end
 
 --// Listen for new players
 Players.PlayerAdded:Connect(function(player)
-    SetupPlayer(player)
+    SetupPlayer(player) -- Setup ESP for new players
 end)
