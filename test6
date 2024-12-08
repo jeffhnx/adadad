@@ -12,7 +12,7 @@ local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
 local LeftControlHeld = false -- Left Control to activate aimbot
 local SpaceHeld = false -- For bunny hopping
 local refreshRate = 1 -- seconds
-local BhopSpeed = 600 -- Set bunny hop speed to 600
+local BhopSpeed = 1000 -- Set bunny hop speed to 1000
 
 --// BHop Function
 local function BunnyHop()
@@ -20,7 +20,7 @@ local function BunnyHop()
         local humanoid = LocalPlayer.Character.Humanoid
         if humanoid:GetState() == Enum.HumanoidStateType.Running then
             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            humanoid.WalkSpeed = BhopSpeed -- Set walk speed to 600 while bunny hopping
+            humanoid.WalkSpeed = BhopSpeed -- Set walk speed to 1000 while bunny hopping
         else
             humanoid.WalkSpeed = 16 -- Default walk speed
         end
@@ -28,38 +28,27 @@ local function BunnyHop()
 end
 
 --// ESP Function
-local function CreateSkeletonESP(character)
-    -- Draw a line between body parts to create a skeleton
-    local parts = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
-    local connections = {
-        {"Head", "Torso"},
-        {"Torso", "Left Arm"},
-        {"Torso", "Right Arm"},
-        {"Torso", "Left Leg"},
-        {"Torso", "Right Leg"}
-    }
-    for _, connection in pairs(connections) do
-        local startPart = character:FindFirstChild(connection[1])
-        local endPart = character:FindFirstChild(connection[2])
-        if startPart and endPart then
-            local line = Drawing.new("Line")
-            line.Visible = ESPEnabled
-            line.From = Camera:WorldToViewportPoint(startPart.Position)
-            line.To = Camera:WorldToViewportPoint(endPart.Position)
-            line.Color = Color3.fromRGB(255, 0, 0) -- Red skeleton
-            line.Thickness = 2
-            
-            -- Update line positions in real time
-            RunService.RenderStepped:Connect(function()
-                if character and startPart and endPart then
-                    line.From = Camera:WorldToViewportPoint(startPart.Position)
-                    line.To = Camera:WorldToViewportPoint(endPart.Position)
-                else
-                    line:Remove()
-                end
-            end)
-        end
+local function CreateESP(player)
+    local highlight = Instance.new("Highlight")
+    highlight.Parent = player.Character
+    highlight.Adornee = player.Character
+
+    -- Set highlight color based on team
+    if player.Team == LocalPlayer.Team then
+        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
+    else
+        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
     end
+
+    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+    highlight.Enabled = ESPEnabled
+
+    -- Remove highlight when player leaves
+    player.CharacterRemoving:Connect(function()
+        highlight:Destroy()
+    end)
+    
+    return highlight -- Return the highlight instance
 end
 
 --// Aimbot Function
@@ -120,12 +109,23 @@ RunService.RenderStepped:Connect(function()
     BunnyHop()
 end)
 
---// Setup ESP for all players and refresh skeletons every second
+--// Setup ESP for all players and refresh highlights every second
 local function RefreshESP()
     while wait(refreshRate) do
         for _, player in pairs(Players:GetPlayers()) do
             if player.Character then
-                CreateSkeletonESP(player.Character) -- Create skeleton ESP
+                local highlight = player.Character:FindFirstChildOfClass("Highlight")
+                if highlight then
+                    -- Update highlight color based on team
+                    if player.Team == LocalPlayer.Team then
+                        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
+                    else
+                        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
+                    end
+                else
+                    -- Create ESP if it doesn't exist
+                    CreateESP(player)
+                end
             end
         end
     end
@@ -139,11 +139,11 @@ local function SetupPlayer(player)
     player.CharacterAdded:Connect(function(character)
         -- Wait for the character to fully load
         character:WaitForChild("Head")
-        CreateSkeletonESP(character) -- Create skeleton ESP for new player character
+        CreateESP(player) -- Create ESP for new player character
     end)
 
     if player.Character then
-        CreateSkeletonESP(player.Character) -- Create skeleton ESP for existing character
+        CreateESP(player) -- Create ESP for existing character
     end
 end
 
