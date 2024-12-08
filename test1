@@ -17,12 +17,10 @@ local refreshRate = 1 -- seconds
 local function BunnyHop()
     if SpaceHeld and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         local humanoid = LocalPlayer.Character.Humanoid
-        local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if humanoid:GetState() == Enum.HumanoidStateType.Running and rootPart then
+        if humanoid:GetState() == Enum.HumanoidStateType.Running then
             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            
-            -- Apply fixed jump distance of 70
-            rootPart.Velocity = rootPart.Velocity + Vector3.new(0, 70, 0)
+            humanoid.JumpHeight = 10 -- Set jump height
+            humanoid.WalkSpeed = 25 -- Adjust for jump distance
         end
     end
 end
