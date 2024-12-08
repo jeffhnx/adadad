@@ -17,11 +17,13 @@ local refreshRate = 1 -- seconds
 local function BunnyHop()
     if SpaceHeld and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         local humanoid = LocalPlayer.Character.Humanoid
+        humanoid.JumpPower = 150 -- Set higher JumpPower for farther jumps
         if humanoid:GetState() == Enum.HumanoidStateType.Running then
             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            humanoid.WalkSpeed = 250 -- Set movement speed to 250
-        else
-            humanoid.WalkSpeed = 16 -- Reset to normal speed when not bunny hopping
+        end
+    else
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.JumpPower = 50 -- Reset JumpPower to default when not hopping
         end
     end
 end
