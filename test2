@@ -9,10 +9,10 @@ local LocalPlayer = Players.LocalPlayer
 local AimbotEnabled = true
 local ESPEnabled = true
 local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
-local RightMouseHeld = false -- Changed to Right Mouse Button
+local LeftControlHeld = false -- Left Control to activate aimbot
 local SpaceHeld = false -- For bunny hopping
 local refreshRate = 1 -- seconds
-local BhopSpeed = 30 -- Changed bunny hop speed
+local BhopSpeed = 45 -- Set bunny hop speed to 45
 
 --// BHop Function
 local function BunnyHop()
@@ -20,7 +20,7 @@ local function BunnyHop()
         local humanoid = LocalPlayer.Character.Humanoid
         if humanoid:GetState() == Enum.HumanoidStateType.Running then
             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            humanoid.WalkSpeed = BhopSpeed -- Set walk speed to 30 while bunny hopping
+            humanoid.WalkSpeed = BhopSpeed -- Set walk speed to 45 while bunny hopping
         else
             humanoid.WalkSpeed = 16 -- Default walk speed (or any other default value you prefer)
         end
@@ -53,7 +53,7 @@ end
 
 --// Aimbot Function
 local function Aimbot()
-    if RightMouseHeld and AimbotEnabled then
+    if LeftControlHeld and AimbotEnabled then
         local closestPlayer = nil
         local closestDistance = math.huge
 
@@ -88,16 +88,16 @@ end
 
 --// User Input Handlers
 UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        RightMouseHeld = true -- Right mouse button held to enable aimbot
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        LeftControlHeld = true -- Left control held to enable aimbot
     elseif input.KeyCode == Enum.KeyCode.Space then
         SpaceHeld = true -- Space held for bunny hopping
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        RightMouseHeld = false -- Release right mouse button to disable aimbot
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        LeftControlHeld = false -- Release left control to disable aimbot
     elseif input.KeyCode == Enum.KeyCode.Space then
         SpaceHeld = false -- Release space to stop bunny hopping
     end
