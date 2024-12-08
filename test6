@@ -8,6 +8,10 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local tool = character:WaitForChild("Tool") -- Assuming you're using a tool to attack (like a sword)
 
+local userInputService = game:GetService("UserInputService")
+local walkSpeedNormal = 16 -- Normal walk speed
+local walkSpeedBoost = 25 -- Walk speed when holding space
+
 local function findEnemies()
     local enemies = {}
     local playerPosition = character.HumanoidRootPart.Position
@@ -43,6 +47,25 @@ local function startKillAura()
         wait(attackInterval) -- Wait before attacking again
     end
 end
+
+-- Function to handle changing the walk speed when holding Space
+local function onInputBegan(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Space then
+        humanoid.WalkSpeed = walkSpeedBoost -- Set walk speed to 25 when Space is held
+    end
+end
+
+local function onInputEnded(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Space then
+        humanoid.WalkSpeed = walkSpeedNormal -- Reset walk speed when Space is released
+    end
+end
+
+-- Connect the input functions to the UserInputService
+userInputService.InputBegan:Connect(onInputBegan)
+userInputService.InputEnded:Connect(onInputEnded)
 
 -- Start the Kill Aura when the script runs
 startKillAura()
