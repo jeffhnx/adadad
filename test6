@@ -9,11 +9,10 @@ local LocalPlayer = Players.LocalPlayer
 local AimbotEnabled = true
 local ESPEnabled = true
 local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
-local LeftControlHeld = false
-local SpaceHeld = false -- For bunny hopping and speed boost
+local RightMouseHeld = false -- Changed to Right Mouse Button
+local SpaceHeld = false -- For bunny hopping
 local refreshRate = 1 -- seconds
-local WalkSpeedNormal = 16 -- Normal walk speed (default Roblox walk speed)
-local WalkSpeedBoosted = 25 -- Walk speed when Space is held
+local BhopSpeed = 30 -- Changed bunny hop speed
 
 --// BHop Function
 local function BunnyHop()
@@ -21,6 +20,9 @@ local function BunnyHop()
         local humanoid = LocalPlayer.Character.Humanoid
         if humanoid:GetState() == Enum.HumanoidStateType.Running then
             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            humanoid.WalkSpeed = BhopSpeed -- Set walk speed to 30 while bunny hopping
+        else
+            humanoid.WalkSpeed = 16 -- Default walk speed (or any other default value you prefer)
         end
     end
 end
@@ -51,7 +53,7 @@ end
 
 --// Aimbot Function
 local function Aimbot()
-    if LeftControlHeld and AimbotEnabled then
+    if RightMouseHeld and AimbotEnabled then
         local closestPlayer = nil
         local closestDistance = math.huge
 
@@ -86,34 +88,23 @@ end
 
 --// User Input Handlers
 UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.LeftControl then
-        LeftControlHeld = true -- Left control held to enable aimbot
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        RightMouseHeld = true -- Right mouse button held to enable aimbot
     elseif input.KeyCode == Enum.KeyCode.Space then
-        SpaceHeld = true -- Space held for bunny hopping and speed boost
+        SpaceHeld = true -- Space held for bunny hopping
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.LeftControl then
-        LeftControlHeld = false -- Release left control to disable aimbot
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        RightMouseHeld = false -- Release right mouse button to disable aimbot
     elseif input.KeyCode == Enum.KeyCode.Space then
-        SpaceHeld = false -- Release space to stop bunny hopping and revert walk speed
+        SpaceHeld = false -- Release space to stop bunny hopping
     end
 end)
 
 --// Run Service Loop
 RunService.RenderStepped:Connect(function()
-    -- Adjust walk speed when Space is held
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        local humanoid = LocalPlayer.Character.Humanoid
-        if SpaceHeld then
-            humanoid.WalkSpeed = WalkSpeedBoosted -- Set speed to 25 when Space is held
-        else
-            humanoid.WalkSpeed = WalkSpeedNormal -- Set back to normal walk speed when Space is released
-        end
-    end
-
-    -- Run the aimbot and bunny hop functions
     Aimbot()
     BunnyHop()
 end)
