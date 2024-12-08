@@ -1,0 +1,48 @@
+-- Kill Aura Script
+local auraRadius = 10 -- The radius around the player to detect enemies
+local damage = 10 -- The amount of damage to deal to enemies
+local attackInterval = 0.5 -- Time between attacks
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local tool = character:WaitForChild("Tool") -- Assuming you're using a tool to attack (like a sword)
+
+local function findEnemies()
+    local enemies = {}
+    local playerPosition = character.HumanoidRootPart.Position
+    -- Find all players in the game
+    for _, otherPlayer in ipairs(game.Players:GetPlayers()) do
+        if otherPlayer ~= player then
+            local otherCharacter = otherPlayer.Character
+            if otherCharacter then
+                local otherHumanoid = otherCharacter:FindFirstChild("Humanoid")
+                if otherHumanoid and (otherCharacter.HumanoidRootPart.Position - playerPosition).Magnitude <= auraRadius then
+                    table.insert(enemies, otherCharacter)
+                end
+            end
+        end
+    end
+    return enemies
+end
+
+local function attackEnemy(enemy)
+    if enemy and enemy:FindFirstChild("Humanoid") then
+        local enemyHumanoid = enemy.Humanoid
+        -- Deal damage to the enemy
+        enemyHumanoid:TakeDamage(damage)
+    end
+end
+
+local function startKillAura()
+    while true do
+        local enemies = findEnemies()
+        for _, enemy in ipairs(enemies) do
+            attackEnemy(enemy)
+        end
+        wait(attackInterval) -- Wait before attacking again
+    end
+end
+
+-- Start the Kill Aura when the script runs
+startKillAura()
