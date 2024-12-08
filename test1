@@ -13,14 +13,13 @@ local LeftControlHeld = false
 local SpaceHeld = false -- For bunny hopping
 local refreshRate = 1 -- seconds
 
---// BHop Function (with custom jump height and distance)
+--// BHop Function (with custom jump distance)
 local function BunnyHop()
     if SpaceHeld and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         local humanoid = LocalPlayer.Character.Humanoid
         if humanoid:GetState() == Enum.HumanoidStateType.Running then
             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            -- Modify jump power and distance
-            humanoid.JumpHeight = 7 -- Set jump height to 7 studs
+            -- Modify jump distance (No jump height modification)
             humanoid:Move(Vector3.new(25, 0, 0)) -- Set jump distance to 25 studs
         end
     end
