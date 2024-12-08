@@ -12,7 +12,7 @@ local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
 local LeftControlHeld = false -- Left Control to activate aimbot
 local SpaceHeld = false -- For bunny hopping
 local refreshRate = 1 -- seconds
-local BhopSpeed = 70 -- Set bunny hop speed to 70
+local BhopSpeed = 500 -- Set bunny hop speed to 500
 
 --// BHop Function
 local function BunnyHop()
@@ -20,9 +20,9 @@ local function BunnyHop()
         local humanoid = LocalPlayer.Character.Humanoid
         if humanoid:GetState() == Enum.HumanoidStateType.Running then
             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            humanoid.WalkSpeed = BhopSpeed -- Set walk speed to 70 while bunny hopping
+            humanoid.WalkSpeed = BhopSpeed -- Set walk speed to 500 while bunny hopping
         else
-            humanoid.WalkSpeed = 16 -- Default walk speed (or any other default value you prefer)
+            humanoid.WalkSpeed = 16 -- Default walk speed
         end
     end
 end
