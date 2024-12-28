@@ -16,27 +16,27 @@ local function Aimbot()
         local closestPlayer = nil
         local closestDistance = math.huge
 
-        -- Loop through all players and calculate distance
         for _, player in pairs(Players:GetPlayers()) do
             -- Check if the player is not the local player and has a character with a head
             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                -- Calculate the distance from the local player to the target player
-                local targetPosition = player.Character.Head.Position
-                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - targetPosition).Magnitude
-
-                -- Check if the player is not on the same team and is within a reasonable range
-                if player.Team ~= LocalPlayer.Team and distance < closestDistance then
+                -- Check for team and only aim at players not on the same team
+                if player.Team ~= LocalPlayer.Team then
+                    local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at head level
                     local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
 
                     if onScreen then
-                        closestDistance = distance
-                        closestPlayer = player
+                        local mousePosition = UserInputService:GetMouseLocation()
+                        local distance = (Vector2.new(mousePosition.X, mousePosition.Y) - Vector2.new(screenPosition.X, screenPosition.Y)).Magnitude
+
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            closestPlayer = player
+                        end
                     end
                 end
             end
         end
 
-        -- If a closest player is found, aim at them
         if closestPlayer then
             local targetPosition = closestPlayer.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Aiming at head level
             local cameraCFrame = CFrame.new(Camera.CFrame.Position, targetPosition)
