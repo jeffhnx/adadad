@@ -7,31 +7,22 @@ local LocalPlayer = Players.LocalPlayer
 
 --// Variables
 local AimbotEnabled = true
-local AimbotStrength = 0.5 -- Smoothness of aiming transition
+local AimbotStrength = 0.5 -- Sensitivity for how quickly to aim at the target
 local RightMouseHeld = false
-local ArrowSpeed = 200 -- Initial speed of the arrow (studs per second)
-local Gravity = Vector3.new(0, -196.2, 0) -- Roblox gravity (studs/second^2)
+local ArrowSpeed = 200 -- Speed of the arrow (studs per second)
 
---// Function to Predict Trajectory with Gravity
-local function PredictTrajectory(player)
+--// Function to Predict Player Position
+local function PredictPosition(player)
     local character = player.Character
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        local rootPart = character.HumanoidRootPart
-        local playerVelocity = rootPart.AssemblyLinearVelocity -- Get the player's velocity
-        local startPosition = Camera.CFrame.Position
-        local targetPosition = rootPart.Position
-        local distance = (targetPosition - startPosition).Magnitude
-        local travelTime = distance / ArrowSpeed -- Initial estimate of travel time
+    if character and character:FindFirstChild("Head") then
+        local head = character.Head
+        local playerVelocity = head.AssemblyLinearVelocity -- Get the player's velocity
+        local distance = (head.Position - Camera.CFrame.Position).Magnitude -- Distance to target
+        local travelTime = distance / ArrowSpeed -- Time for the arrow to reach the target
 
-        -- Account for player's movement during arrow travel
-        local futurePosition = targetPosition + (playerVelocity * travelTime)
-
-        -- Calculate trajectory adjustment for gravity
-        local direction = (futurePosition - startPosition).Unit
-        local gravityEffect = 0.5 * Gravity * travelTime^2 -- Gravity's effect on trajectory
-        local adjustedPosition = futurePosition + gravityEffect
-
-        return adjustedPosition
+        -- Predict the position based on the player's velocity and travel time
+        local predictedPosition = head.Position + (playerVelocity * travelTime)
+        return predictedPosition
     end
     return nil
 end
@@ -44,11 +35,11 @@ local function Aimbot()
         local targetPosition = nil
 
         for _, player in pairs(Players:GetPlayers()) do
-            -- Check if the player is not the local player and has a character with a HumanoidRootPart
-            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            -- Check if the player is not the local player and has a character with a head
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
                 -- Check for team and only aim at players not on the same team
                 if player.Team ~= LocalPlayer.Team then
-                    local predictedPosition = PredictTrajectory(player)
+                    local predictedPosition = PredictPosition(player)
                     if predictedPosition then
                         local screenPosition, onScreen = Camera:WorldToViewportPoint(predictedPosition)
 
