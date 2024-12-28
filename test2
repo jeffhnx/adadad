@@ -17,9 +17,9 @@ local function Aimbot()
         local closestDistance = math.huge
 
         for _, player in pairs(Players:GetPlayers()) do
-            -- Check if the player is not the local player and has a character with a head
+            -- Make sure the player is not the local player and has a character with a head
             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                -- Check for team and only aim at players not on the same team
+                -- Only aim at players on different teams
                 if player.Team ~= LocalPlayer.Team then
                     local targetPosition = player.Character.Head.Position + Vector3.new(0, 0.5, 0) -- Adjusting to aim at head level
                     local screenPosition, onScreen = Camera:WorldToViewportPoint(targetPosition)
