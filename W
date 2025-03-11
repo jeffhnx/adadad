@@ -1,0 +1,48 @@
+local imgui = require 'imgui' -- Ensure ImGui is properly set up
+
+local aimbot_enabled = false
+local wallhack_enabled = false
+local fov_visible = true
+local fov_amount = 90
+local third_person = false
+local sensitivity = 3.0
+local color_picker = {1.0, 0.0, 0.0, 1.0} -- Red color
+
+function love.draw()
+    imgui.NewFrame()
+
+    -- Main Window
+    if imgui.Begin("AirHub V1.0 | Aimbot Wall Hack Visuals Crosshair Functions") then
+        
+        -- Aimbot Section
+        imgui.Text("Values")
+        aimbot_enabled = imgui.Checkbox("Enable Aimbot", aimbot_enabled)
+        wallhack_enabled = imgui.Checkbox("Enable WallHack", wallhack_enabled)
+        
+        -- Lock Part Dropdown
+        if imgui.BeginCombo("Lock Part", "Head") then
+            if imgui.Selectable("Head", true) then end
+            if imgui.Selectable("Torso") then end
+            imgui.EndCombo()
+        end
+
+        -- Sensitivity Slider
+        sensitivity = imgui.SliderFloat("Sensitivity", sensitivity, 0.1, 5.0)
+
+        -- FOV Settings
+        imgui.Text("Field Of View")
+        fov_visible = imgui.Checkbox("Enable FOV Circle", fov_visible)
+        fov_amount = imgui.SliderInt("FOV Amount", fov_amount, 30, 120)
+
+        -- Third Person Settings
+        third_person = imgui.Checkbox("Enable Third Person", third_person)
+
+        -- Color Picker
+        imgui.Text("Color Settings")
+        color_picker = { imgui.ColorEdit3("ESP Color", color_picker[1], color_picker[2], color_picker[3]) }
+
+        imgui.End()
+    end
+
+    imgui.Render()
+end
